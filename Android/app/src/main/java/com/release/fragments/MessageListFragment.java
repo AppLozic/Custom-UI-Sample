@@ -85,7 +85,6 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
                         if ( (visibleItemCount + pastVisibleItems) >= totalItemCount)
                         {
                             loading = false;
-                            Log.v("Pagination ", "Last Item Wow !");
                             //Do pagination.. i.e. fetch new data
                             ApplozicConversation.getLatestMessageList(getActivity(), true, new MessageListHandler() {
                                 @Override
@@ -149,7 +148,6 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
         ApplozicConversation.getLatestMessageList(getActivity(), false, new MessageListHandler() {
             @Override
             public void onResult(List<Message> messageList, ApplozicException e) {
-                Log.d("Check ","Coming here");
                 if(e==null){
                     setView(messageList);
                 }else{

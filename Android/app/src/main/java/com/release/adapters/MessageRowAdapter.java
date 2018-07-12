@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,7 +53,6 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         this.messageDatabaseService = new MessageDatabaseService(mContext);
         inflater = LayoutInflater.from(mContext);
         this.messageList = listOfMessages;
-//        Log.v("Ihs",messageList.size()+" Pass");
     }
 
     @Override
@@ -64,24 +62,23 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         return holder;
     }
 
+    /**
+     * This method displays conversation header in rows displaying conversation name, image and last message.
+     * It also handles onclick event on the message row opening detailed conversation with that particular thread.
+     * @param mholder
+     * @param position
+     */
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder mholder, int position) {
         final Message current = messageList.get(position);
         MyViewHolder holder = (MyViewHolder) mholder;
-        /*
-            Display Information depending on whether conversation is for group or for 1-1 chat.
-         */
-
-
-
         switch (holder.getItemViewType()){
             case ONE_TO_ONE_CHAT:
                 final Contact contact = new AppContactService(mContext).getContactById(current.getContactIds());
                 holder.smsReceiver.setText(contact.getDisplayName());
 
-                if(messageDatabaseService.getUnreadMessageCountForContact(contact.getUserId()) != 0){
-                    Log.d("Still", String.valueOf(messageDatabaseService.getUnreadMessageCountForContact(contact.getUserId())));
-                    holder.unreadSmsCount.setText(String.valueOf(messageDatabaseService.getUnreadMessageCountForContact(contact.getUserId())));
+                if(messageDatabaseService.getUnreadMessageCountForContact(current.getContactIds()) != 0){
+                    holder.unreadSmsCount.setText(String.valueOf(messageDatabaseService.getUnreadMessageCountForContact(current.getContactIds())));
                 }
 
                 if(contact.getImageURL() == null || contact.getImageURL().equalsIgnoreCase(null)) {
@@ -120,22 +117,6 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                 holder.singleRowLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-//                        ApplozicConversation.getMessageListForContact(mContext, (new ContactDatabase(mContext)).getContactById(current.getContactIds()), null, new MessageListHandler() {
-//                            @Override
-//                            public void onResult(List<Message> messageList, ApplozicException e) {
-//                                if(e != null){
-//                                }
-//                                ClickedItem.setMessage(messageList);
-//                                MobiComConversationService mobiComConversationService = new MobiComConversationService(mContext);
-//                                mobiComConversationService.read(contact, null);
-//                                Intent intent = new Intent(mContext, ConversationActivity.class);
-//                                intent.putExtra("TYPE","CONTACT");
-////                                intent.putExtra("NAME",contact.getDisplayName());
-//                                intent.putExtra("ID",current.getContactIds());
-//                                intent.putExtra("CHECK_INTENT", "ACTIVITY");
-//                                mContext.startActivity(intent);
-//                            }
-//                        });
                         Intent intent = new Intent(mContext, ConversationActivity.class);
                         intent.putExtra("TYPE", "CONTACT");
                         intent.putExtra("ID",current.getContactIds());
@@ -152,8 +133,8 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                 holder.smsReceiver.setText(channel.getName());
 //                if(channel.getUnreadCount()!=0)
 //                    holder.unreadSmsCount.setText(String.valueOf(channel.getUnreadCount()));
-                if(messageDatabaseService.getUnreadMessageCountForChannel(messageList.get(position).getGroupId()) != 0)
-                    holder.unreadSmsCount.setText(String.valueOf(messageDatabaseService.getUnreadMessageCountForChannel(messageList.get(position).getGroupId())));
+                if(messageDatabaseService.getUnreadMessageCountForChannel(current.getGroupId()) != 0)
+                    holder.unreadSmsCount.setText(String.valueOf(messageDatabaseService.getUnreadMessageCountForChannel(current.getGroupId())));
                 if(channel.getImageUrl() == null || channel.getImageUrl().equalsIgnoreCase(null)) {
                     holder.contactPhoto.setImageResource(R.drawable.group_profile);
                 }
@@ -191,22 +172,6 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                 holder.singleRowLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-//                        ApplozicConversation.getMessageListForChannel(mContext, ChannelDatabaseService.getInstance(mContext).getChannelByChannelKey(current.getGroupId()), null, new MessageListHandler() {
-//                            @Override
-//                            public void onResult(List<Message> messageList, ApplozicException e) {
-//                                if(e != null){
-//                                }
-//                                ClickedItem.setMessage(messageList);
-//                                MobiComConversationService mobiComConversationService = new MobiComConversationService(mContext);
-//                                mobiComConversationService.read(null, channel);
-//                                Intent intent = new Intent(mContext, ConversationActivity.class);
-//                                intent.putExtra("TYPE","CHANNEL");
-////                                intent.putExtra("NAME",channel.getName());
-//                                intent.putExtra("ID",current.getGroupId());
-//                                intent.putExtra("CHECK_INTENT", "ACTIVITY");
-//                                mContext.startActivity(intent);
-//                            }
-//                        });
                         Intent intent = new Intent(mContext, ConversationActivity.class);
                         intent.putExtra("TYPE","CHANNEL");
                         intent.putExtra("ID",current.getGroupId());

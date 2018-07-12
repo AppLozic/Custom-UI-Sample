@@ -5,7 +5,14 @@
     <item
         android:id="@+id/action_chat"
         android:title="@string/action_example"
-        app:showAsAction="withText|ifRoom" />
+        app:showAsAction="always" />
+
+    <item
+        android:title="NEW"
+        android:id="@+id/action_contact"
+        android:icon="@drawable/add_contact_icon"
+        app:showAsAction="always" />
+
     <item
         android:id="@+id/action_settings"
         android:title="@string/action_settings"

@@ -21,25 +21,16 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.applozic.mobicomkit.Applozic;
-import com.applozic.mobicomkit.api.account.user.MobiComUserPreference;
 import com.applozic.mobicomkit.api.account.user.UserLogoutTask;
-import com.applozic.mobicomkit.api.conversation.Message;
-import com.applozic.mobicomkit.api.conversation.MobiComConversationService;
-import com.applozic.mobicomkit.exception.ApplozicException;
 import com.applozic.mobicomkit.listners.AlLogoutHandler;
-import com.applozic.mobicomkit.listners.MessageListHandler;
-import com.applozic.mobicommons.people.channel.Channel;
-import com.applozic.mobicommons.people.contact.Contact;
+import com.release.activity.ContactActivity;
 import com.release.fragments.InitiateDialogFragment;
 import com.release.fragments.MainContainerFragment;
 import com.release.fragments.MessageListFragment;
 
-import java.util.List;
-import java.util.Map;
-
 public class MainActivity extends AppCompatActivity  implements NavigationDrawerFragment.NavigationDrawerCallbacks,
         MessageListFragment.OnFragmentInteractionListener,MainContainerFragment.OnFragmentInteractionListener{
-
+//Comment
     private UserLogoutTask userLogoutTask;
 
     private NavigationDrawerFragment mNavigationDrawerFragment;
@@ -49,23 +40,22 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
         mTitle = getTitle();
         ActionBar actionBar = getSupportActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(mTitle);
-
         mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
-
-        Log.d("ActionBarTitle", mTitle.toString());
         mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout));
 
     }
 
-    public void setActionBarTitle(String title){
-        getSupportActionBar().setTitle(title);
+    public void restoreActionBar() {
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+        actionBar.setDisplayShowTitleEnabled(true);
+        actionBar.setTitle(mTitle);
     }
 
     public void initiateChatClick(View v) {
@@ -95,6 +85,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
             return;
         }
         if (position == 0) {
+            mTitle = getString(R.string.ecommerce);
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             MainContainerFragment mainContainerFragment = new MainContainerFragment();
@@ -152,7 +143,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
             // if the drawer is not showing. Otherwise, let the drawer
             // decide what to show in the action bar.
             getMenuInflater().inflate(R.menu.main, menu);
-//            restoreActionBar();
+            restoreActionBar();
             return true;
         }
         return super.onCreateOptionsMenu(menu);
@@ -176,6 +167,10 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
             MessageListFragment messageListFragment = new MessageListFragment();
             fragmentTransaction.replace(R.id.container,messageListFragment);
             fragmentTransaction.commit();
+        }
+
+        if(id == R.id.action_contact){
+            startActivity(new Intent(this, ContactActivity.class));
         }
 
         return super.onOptionsItemSelected(item);

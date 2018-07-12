@@ -67,7 +67,6 @@ public class LoginActivity extends AppCompatActivity {
                 attemptLogin(User.AuthenticationType.APPLOZIC);
             }
         });
-
         mobiComUserPreference = MobiComUserPreference.getInstance(this);
     }
 
@@ -110,11 +109,6 @@ public class LoginActivity extends AppCompatActivity {
             focusView = mEmailAddress;
             cancel = true;
         }
-//        else if (!isEmailValid(email)) {
-//            mEmailAddress.setError("Invalid email");
-//            focusView = mEmailAddress;
-//            cancel = true;
-//        }
 
         if (cancel) {
             // There was an error; don't attempt login and focus the first

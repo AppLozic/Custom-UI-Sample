@@ -109,8 +109,6 @@ public class PhotoFullPopupWindow extends PopupWindow {
                         }
                     })
 
-
-
 //                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(photoView);
 

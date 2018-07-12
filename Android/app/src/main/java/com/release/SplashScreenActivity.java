@@ -9,8 +9,8 @@ import com.applozic.mobicomkit.api.account.user.MobiComUserPreference;
 
 /**
  * Splash Screen for 1000ms.
- * If user is already logged in then go to MainActivity.
- * Else Open LoginActivity.
+ * If user is already logged in then go to MainActivity.Else Open LoginActivity.
+ * MobiComUserPreference.isLoggedIn() method is used to check if user is logged in.
  */
 public class SplashScreenActivity extends Activity {
 

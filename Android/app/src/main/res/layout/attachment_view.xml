@@ -15,6 +15,26 @@
         android:adjustViewBounds="true"
         android:src="@drawable/image"/>
 
+    <ImageButton
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:scaleType="centerCrop"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_centerInParent="true"
+        android:id="@+id/overlay_icon"
+        android:background="@null"
+        android:src="@drawable/play_icon"/>
+
+    <ProgressBar
+        android:id="@+id/sending_progress_bar"
+        android:layout_marginTop="20dp"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
+
     <ProgressBar
         android:id="@+id/attachment_progress_bar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -46,6 +66,7 @@
         android:scaleType="centerCrop"
         android:src="@drawable/video"
         android:gravity="center"
+        android:adjustViewBounds="true"
         android:visibility="gone"/>
 
     <ImageView
@@ -58,88 +79,24 @@
         android:visibility="gone"
         android:src="@drawable/location"/>
 
-    <RelativeLayout
-        android:id="@+id/attachment_audio_layout"
+    <ImageView
+        android:id="@+id/attachment_other"
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:layout_centerInParent="true"
         android:gravity="center"
-        android:visibility="gone">
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:src="@drawable/attachment_other"/>
 
-        <Button
-            android:layout_width="40dp"
-            android:layout_height="wrap_content"
-            android:text="@string/forward"
-            android:id="@+id/attachment_audio_forward_button"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true" />
-
-        <Button
-            android:layout_width="40dp"
-            android:layout_height="wrap_content"
-            android:text="@string/pause"
-            android:id="@+id/attachment_audio_pause_button"
-            android:layout_alignTop="@id/attachment_audio_forward_button"
-            android:layout_toRightOf="@id/attachment_audio_forward_button"
-            android:layout_toEndOf="@id/attachment_audio_forward_button"/>
-
-        <Button
-            android:layout_width="40dp"
-            android:layout_height="wrap_content"
-            android:text="@string/play"
-            android:id="@+id/attachment_audio_play_button"
-            android:layout_alignTop="@id/attachment_audio_pause_button"
-            android:layout_toRightOf="@id/attachment_audio_pause_button"
-            android:layout_toEndOf="@id/attachment_audio_pause_button" />
-
-        <Button
-            android:layout_width="40dp"
-            android:layout_height="wrap_content"
-            android:text="@string/rewind"
-            android:id="@+id/attachment_audio_rewind_button"
-            android:layout_alignTop="@id/attachment_audio_play_button"
-            android:layout_toRightOf="@id/attachment_audio_play_button"
-            android:layout_toEndOf="@id/attachment_audio_play_button" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="SONG"
-            android:id="@+id/attachment_audio_name"
-            android:layout_centerInParent="true"/>
-
-        <SeekBar
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/attachment_audio_seekbar"
-            android:layout_alignLeft="@id/attachment_audio_name"
-            android:layout_alignStart="@id/attachment_audio_name"
-            android:layout_alignRight="@id/attachment_audio_name"
-            android:layout_alignEnd="@id/attachment_audio_name"
-            android:layout_above="@+id/attachment_audio_forward_button" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="0 : 0"
-            android:id="@+id/attachment_audio_start_time"
-            android:layout_above="@id/attachment_audio_seekbar"
-            android:layout_toLeftOf="@id/attachment_audio_name"
-            android:layout_toStartOf="@id/attachment_audio_name" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:text="0 : 0"
-            android:id="@+id/attachment_audio_final_time"
-            android:layout_above="@id/attachment_audio_seekbar"
-            android:layout_alignRight="@id/attachment_audio_rewind_button"
-            android:layout_alignEnd="@id/attachment_audio_rewind_button" />
-
-    </RelativeLayout>
+    <ImageView
+        android:id="@+id/attachment_audio"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:src="@drawable/audio"/>
 
 </RelativeLayout>

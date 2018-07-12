@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#cccccc"
     android:theme="@style/Theme.ConversationActivity"
     tools:context="com.release.activity.ConversationActivity">
@@ -85,6 +86,33 @@
 
     </LinearLayout>
 
+    <RelativeLayout
+        android:id="@+id/record_audio_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.devlomi.record_view.RecordView
+            android:id="@+id/record_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_toLeftOf="@id/record_button"
+            app:slide_to_cancel_arrow="@drawable/recv_ic_arrow"
+            app:slide_to_cancel_bounds="10dp"
+            app:slide_to_cancel_margin_right="10dp"
+            app:slide_to_cancel_text="Slide To Cancel" />
+
+        <com.devlomi.record_view.RecordButton
+            android:id="@+id/record_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:background="@drawable/recv_bg_mic"
+            android:scaleType="centerInside"
+            app:mic_icon="@drawable/recv_ic_mic_white" />
+    </RelativeLayout>
+
     <LinearLayout
         android:id="@+id/footer_snackbar"
         android:layout_width="match_parent"
@@ -112,6 +140,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/recyclerview_message_list"
+            android:scrollbars="vertical"
             android:layout_above="@id/get_above">
         </android.support.v7.widget.RecyclerView>
     </android.support.v4.widget.SwipeRefreshLayout>
