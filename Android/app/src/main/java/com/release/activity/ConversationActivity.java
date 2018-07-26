@@ -1,12 +1,16 @@
 package com.release.activity;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.media.MediaRecorder;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Parcelable;
@@ -41,11 +45,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.applozic.mobicomkit.Applozic;
+import com.applozic.mobicomkit.api.account.user.MobiComUserPreference;
 import com.applozic.mobicomkit.api.conversation.ApplozicConversation;
+import com.applozic.mobicomkit.api.conversation.ApplozicIntentService;
 import com.applozic.mobicomkit.api.conversation.Message;
 import com.applozic.mobicomkit.api.conversation.MessageBuilder;
 import com.applozic.mobicomkit.api.conversation.MobiComConversationService;
 import com.applozic.mobicomkit.api.people.UserIntentService;
+import com.applozic.mobicomkit.broadcast.ConnectivityReceiver;
 import com.applozic.mobicomkit.channel.database.ChannelDatabaseService;
 import com.applozic.mobicomkit.channel.service.ChannelService;
 import com.applozic.mobicomkit.contact.AppContactService;
@@ -55,6 +62,7 @@ import com.applozic.mobicomkit.listners.ApplozicUIListener;
 import com.applozic.mobicomkit.listners.MediaUploadProgressHandler;
 import com.applozic.mobicomkit.listners.MessageListHandler;
 import com.applozic.mobicommons.commons.core.utils.DateUtils;
+import com.applozic.mobicommons.commons.core.utils.Utils;
 import com.applozic.mobicommons.json.GsonUtils;
 import com.applozic.mobicommons.people.channel.Channel;
 import com.applozic.mobicommons.people.contact.Contact;
@@ -113,6 +121,8 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     private boolean typingStarted = false;
 
+    private ConnectMqtt connectivityReceiver;
+
     /**
      * This method initializes toolbar with the name of the conversation.
      * It processes intent to open conversation with selected contact or group.
@@ -129,6 +139,8 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         toolbarStatus = findViewById(R.id.conversation_activity_toolbar_status);
         toolbarStatus.setVisibility(View.GONE);
         setSupportActionBar(toolbar);
+
+        connectivityReceiver = new ConnectMqtt();
 
         processIntent();
 
@@ -430,8 +442,9 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
             UserIntentService.enqueueWork(ConversationActivity.this, intent);
         }
         toolbarTitle.setText(contact.getDisplayName());
+        Contact temp = new AppContactService(ConversationActivity.this).getContactById(mContact.getContactIds());
         toolbarStatus.setVisibility(View.VISIBLE);
-        toolbarStatus.setText(mContact.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(mContact.getLastSeenAt()));
+        toolbarStatus.setText(temp.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(mContact.getLastSeenAt()));
         ApplozicConversation.getMessageListForContact(ConversationActivity.this, (new ContactDatabase(ConversationActivity.this)).getContactById(contactId), null, new MessageListHandler() {
             @Override
             public void onResult(List<Message> messageList, ApplozicException e) {
@@ -810,7 +823,9 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         }else{
             Applozic.subscribeToTyping(ConversationActivity.this, null, mContact);
         }
-
+        if(connectivityReceiver != null) {
+            registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+        }
         Applozic.getInstance(this).registerUIListener(this);
     }
 
@@ -822,7 +837,9 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         }else{
             Applozic.unSubscribeToTyping(ConversationActivity.this, null, mContact);
         }
-
+        if (connectivityReceiver != null) {
+            unregisterReceiver(connectivityReceiver);
+        }
         Applozic.disconnectPublish(this);
         Applozic.getInstance(this).unregisterUIListener();
     }
@@ -835,6 +852,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      */
     @Override
     public void onMessageSent(Message message) {
+        Log.d("Checking ", "..................................." + "Message Sent CALLED" + "...................................");
         message.setSentToServer(true);
         updateAdapterOnDelivered(message);
     }
@@ -845,6 +863,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      */
     @Override
     public void onMessageReceived(Message message) {
+        Log.d("Checking ", "..................................." + "Message Received CALLED" + "...................................");
         updateAdapterOnSent(message);
     }
 
@@ -862,6 +881,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      */
     @Override
     public void onMessageSync(Message message, String key) {
+        Log.d("Checking ", "..................................." + "Message Sync CALLED" + "...................................");
         if (message.isTypeOutbox()) {
             updateAdapterOnSent(message);
         }
@@ -881,6 +901,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      */
     @Override
     public void onMessageDelivered(Message message, String userId) {
+        Log.d("Checking ", "..................................." + "Message Delivered CALLED" + "...................................");
         updateAdapterOnDelivered(message);
     }
 
@@ -981,5 +1002,38 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     @Override
     public void onMessageMetadataUpdated(String keyString) {
         Log.d("Checking ", "..................................." + "META DATA CALLED" + "...................................");
+    }
+
+    public void connectPublishAgain(){
+        Log.d("SHIVAMMM", "Chey aahiudi asida");
+        Applozic.connectPublish(ConversationActivity.this);
+    }
+
+    class ConnectMqtt extends BroadcastReceiver{
+        static final private String CONNECTIVITY_CHANGE = "android.net.conn.CONNECTIVITY_CHANGE";
+        boolean firstConnect = true;
+        @Override
+        public void onReceive(@NonNull Context context, @NonNull Intent intent) {
+            String action = intent.getAction();
+            if (CONNECTIVITY_CHANGE.equalsIgnoreCase(action)) {
+                if (!Utils.isInternetAvailable(context)) {
+                    firstConnect = true;
+                    return;
+                }
+                if (!MobiComUserPreference.getInstance(context).isLoggedIn()) {
+                    return;
+                }
+                ConnectivityManager cm = ((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
+                if (cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected()) {
+                    if (firstConnect) {
+                        firstConnect = false;
+                        Intent connectivityIntent = new Intent(context, ApplozicIntentService.class);
+                        connectivityIntent.putExtra(ApplozicIntentService.AL_SYNC_ON_CONNECTIVITY, true);
+                        ApplozicIntentService.enqueueWork(context,connectivityIntent);
+                        connectPublishAgain();
+                    }
+                }
+            }
+        }
     }
 }
