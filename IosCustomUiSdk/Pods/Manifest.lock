@@ -1,0 +1,30 @@
+PODS:
+  - Applozic (6.1.0):
+    - SDWebImage (~> 4.4)
+  - Kingfisher (4.7.0)
+  - MessageKit (1.0.0)
+  - SDWebImage (4.4.2):
+    - SDWebImage/Core (= 4.4.2)
+  - SDWebImage/Core (4.4.2)
+
+DEPENDENCIES:
+  - Applozic (= 6.1.0)
+  - Kingfisher (~> 4.7.0)
+  - MessageKit
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - Applozic
+    - Kingfisher
+    - MessageKit
+    - SDWebImage
+
+SPEC CHECKSUMS:
+  Applozic: d057d0acd165b79941f0277db2007187111696b0
+  Kingfisher: da6b005aa96d37698e3e4f1ccfe96a5b9bbf27d6
+  MessageKit: 16160036b16476b04bd0e9f2c7ce67e662e503e4
+  SDWebImage: 624d6e296c69b244bcede364c72ae0430ac14681
+
+PODFILE CHECKSUM: e1478f770aa5883969fd5a8767641f384646242f
+
+COCOAPODS: 1.6.0.beta.1
