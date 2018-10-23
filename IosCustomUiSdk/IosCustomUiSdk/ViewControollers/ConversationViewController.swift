@@ -847,9 +847,9 @@ extension ConversationViewController: MessageInputBarDelegate {
                 jsonStringDic = try! JSONSerialization.jsonObject(with: aData, options: .mutableContainers) as? [AnyHashable : Any]
             }
 
-            let latDelta: CLLocationDegrees =  Double(jsonStringDic?["lat"] as! String) ?? 0.0
+            let latDelta: CLLocationDegrees =  Double(truncating: jsonStringDic?["lat"] as! NSNumber)
 
-            let lonDelta: CLLocationDegrees =  Double(jsonStringDic?["lon"] as! String) ?? 0.0
+            let lonDelta: CLLocationDegrees =  Double(truncating: jsonStringDic?["lon"] as! NSNumber)
 
             let location =  CLLocation(latitude: latDelta, longitude: lonDelta)
 
