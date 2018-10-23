@@ -17,7 +17,7 @@ public class ConversationViewController: MessagesViewController,ApplozicUpdatesD
 
 
     let refreshControl = UIRefreshControl()
-
+    
     let appDelegate: AppDelegate? = UIApplication.shared.delegate as? AppDelegate
 
     let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.gray)
@@ -605,6 +605,11 @@ extension ConversationViewController: MessageInputBarDelegate {
 
     }
 
+    
+    @objc func backTapped() {
+        _ = self.navigationController?.popViewController(animated: true)
+    }
+
 
     public override func viewWillAppear(_ animated: Bool) {
 
@@ -617,6 +622,14 @@ extension ConversationViewController: MessageInputBarDelegate {
         }else{
             self.applozicClient.subscribeToTypingStatusForOneToOne()
         }
+
+        self.navigationController?.navigationBar.isTranslucent = false
+        if self.navigationController?.viewControllers.first != self {
+            var backImage = UIImage.init(named: "icon_back", in: Bundle(for: ALChatViewController.self), compatibleWith: nil)
+            backImage = backImage?.imageFlippedForRightToLeftLayoutDirection()
+            self.navigationItem.leftBarButtonItem = UIBarButtonItem.init(image: backImage, style: .plain, target: self , action: #selector(backTapped))
+        }
+
         setTitle()
 
         messageInputBar.sendButton.tintColor = UIColor(red: 69/255, green: 193/255, blue: 89/255, alpha: 1)

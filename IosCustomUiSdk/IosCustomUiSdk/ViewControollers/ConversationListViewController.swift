@@ -69,10 +69,32 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
 
 
-    public override func viewDidLoad() {
+    public override func viewWillAppear(_ animated: Bool) {
+
+        self.setupView()
 
     }
 
+    public override func viewDidAppear(_ animated: Bool) {
+
+        activityIndicator.center = CGPoint(x: view.bounds.size.width/2, y: view.bounds.size.height/2)
+        activityIndicator.color = UIColor.gray
+        view.addSubview(activityIndicator)
+        self.view.bringSubview(toFront: activityIndicator)
+        self.activityIndicator.startAnimating()
+
+        applozicClient = ApplozicClient.init(applicationKey: "applozic-sample-app", with: self)
+        applozicClient.subscribeToConversation()
+
+        applozicClient.getLatestMessages(false, withCompletionHandler: { messageList, error in
+            if error == nil {
+                self.allMessages = messageList as! [ALMessage];
+                self.activityIndicator.stopAnimating()
+                self.tableView.reloadData()
+
+            }
+        })
+    }
 
     private func setupView() {
 
@@ -116,34 +138,6 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
         }
     }
 
-
-    public override func viewWillAppear(_ animated: Bool) {
-
-        activityIndicator.center = CGPoint(x: view.bounds.size.width/2, y: view.bounds.size.height/2)
-        activityIndicator.color = UIColor.gray
-        view.addSubview(activityIndicator)
-        self.view.bringSubview(toFront: activityIndicator)
-        self.activityIndicator.startAnimating()
-
-
-        applozicClient = ApplozicClient.init(applicationKey: "applozic-sample-app", with: self)
-        applozicClient.subscribeToConversation()
-        self.setupView()
-        applozicClient.getLatestMessages(false, withCompletionHandler: { messageList, error in
-            if error == nil {
-                self.allMessages = messageList as! [ALMessage];
-                self.activityIndicator.stopAnimating()
-                self.tableView.reloadData()
-
-            }
-        })
-
-
-    }
-
-    public override func viewDidAppear(_ animated: Bool) {
-
-    }
 
     public override func viewWillDisappear(_ animated: Bool) {
         applozicClient .unsubscribeToConversation()

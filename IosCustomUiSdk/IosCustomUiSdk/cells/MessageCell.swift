@@ -209,7 +209,7 @@ public class MessageCell: UITableViewCell {
         if(self.message.groupId != nil ){
             let placeHolder =   ALUtilityClass .getImageFromFramworkBundle("applozic_group_icon.png")
 
-            channel = ALChannelService.sharedInstance().getChannelByKey(self.message.groupId);
+            channel = ALChannelService.sharedInstance().getChannelByKey(self.message.groupId) as ALChannel;
 
             avatarImageView.isHidden = false
             if let imgStr = channel.channelImageURL,let imgURL = URL.init(string: imgStr) {

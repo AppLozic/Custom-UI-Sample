@@ -22,13 +22,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
     var window: UIWindow?
 
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
 
-        ALMessageService.syncMessages()
+        if(ALUserDefaultsHandler .isLoggedIn()){
+            ALMessageService.syncMessages()
+        }
 
         registerForNotification()
 
         applozicClient = ApplozicClient.init(applicationKey: "applozic-sample-app", with: self)
+
+
+        if (ALUserDefaultsHandler.isLoggedIn())
+        {
+
+            let viewController =    ConversationListViewController()
+            let nav = ALKBaseNavigationViewController(rootViewController: viewController)
+
+            nav.modalTransitionStyle = .crossDissolve
+
+            self.window?.makeKeyAndVisible();
+            self.window?.rootViewController!.present(nav, animated:false, completion: nil)
+
+        }
 
         if (launchOptions != nil)
         {
@@ -43,7 +59,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
                 if(pushnotification.isApplozicNotification(launchOptions)){
 
                     applozicClient.notificationArrived(to: application, with: launchOptions)
-                    self.openChatView(dic: dictionary as! [AnyHashable : Any])
+                    DispatchQueue.main.async {
+                        self.openChatView(dic: dictionary as! [AnyHashable : Any])
+                    }
 
                 }else{
                     //handle your notification
@@ -51,6 +69,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
             }
         }
+
 
 
         // Override point for customization after application launch.
@@ -187,6 +206,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
             print("Unknown action")
         }
 
+        applozicClient.notificationArrived(to: UIApplication.shared, with: response.notification.request.content.userInfo)
+
+
         let pushNotification = ALPushNotificationService()
 
         if(pushNotification.isApplozicNotification(response.notification.request.content.userInfo)){
@@ -197,6 +219,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
             let dic =  response.notification.request.content.userInfo
             let viewController = ConversationViewController()
 
+
             let userId =  dic["userId"] as? String
             if(userId != nil ){
                 viewController.userId = userId
@@ -205,13 +228,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
                 viewController.groupId = groupId
             }
 
-            let pushkit = ALPushAssist()
+            let alPushAssist = ALPushAssist()
 
-            pushkit.topViewController.navigationController?.pushViewController(viewController, animated: false)
+            alPushAssist.topViewController.navigationController?.pushViewController(viewController, animated: true)
 
         }
 
-        applozicClient.notificationArrived(to: UIApplication.shared, with: response.notification.request.content.userInfo)
 
         completionHandler()
     }
@@ -389,6 +411,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
                 channelKey = 0
             }
 
+
             let viewController = ConversationViewController()
 
             if(channelKey != 0) {
@@ -397,9 +420,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
                 viewController.userId = notificationMsg;
             }
 
-            let pushkit = ALPushAssist()
+            let alPushAssist = ALPushAssist()
+            alPushAssist.topViewController.navigationController?.pushViewController(viewController, animated: true)
 
-            pushkit.topViewController.navigationController?.pushViewController(viewController, animated: false)
         }
     }
 
