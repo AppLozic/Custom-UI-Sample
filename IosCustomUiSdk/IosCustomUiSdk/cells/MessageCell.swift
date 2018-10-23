@@ -233,6 +233,8 @@ public class MessageCell: UITableViewCell {
 
                 badgeNumberView.isHidden = isHidden
                 badgeNumberLabel.text = numberText
+            }else{
+                badgeNumberView.isHidden = true
             }
 
 
@@ -266,6 +268,8 @@ public class MessageCell: UITableViewCell {
 
                 badgeNumberView.isHidden = isHidden
                 badgeNumberLabel.text = numberText
+            }else{
+                badgeNumberView.isHidden = true
             }
 
             nameLabel.text = contact.displayName != nil ? contact.displayName : contact.userId

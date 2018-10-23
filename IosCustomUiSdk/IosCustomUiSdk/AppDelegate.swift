@@ -210,30 +210,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
 
         let pushNotification = ALPushNotificationService()
+        let alPushAssist = ALPushAssist()
 
         if(pushNotification.isApplozicNotification(response.notification.request.content.userInfo)){
-
             self.openChatView(dic: response.notification.request.content.userInfo)
         }else{
 
             let dic =  response.notification.request.content.userInfo
-            let viewController = ConversationViewController()
 
+            if((alPushAssist.topViewController is ConversationViewController)){
 
-            let userId =  dic["userId"] as? String
-            if(userId != nil ){
-                viewController.userId = userId
+                var json  = [String: Any]()
+
+                let userId =  dic["userId"]
+                if(userId != nil ){
+                    json  = ["userId":userId]
+                    json["groupId"] = 0
+                }else{
+                    let groupId =  dic["groupId"] as? NSNumber
+                   json  = ["groupId":groupId]
+                }
+
+                NotificationCenter.default.post(name: Notification.Name(rawValue: "reloadData"), object: json)
             }else{
-                let groupId =  dic["groupId"] as? NSNumber
-                viewController.groupId = groupId
+                let viewController = ConversationViewController()
+
+                let userId =  dic["userId"] as? String
+                if(userId != nil ){
+                    viewController.userId = userId
+                }else{
+                    let groupId =  dic["groupId"] as? NSNumber
+                    viewController.groupId = groupId
+                }
+                alPushAssist.topViewController.navigationController?.pushViewController(viewController, animated: true)
             }
 
-            let alPushAssist = ALPushAssist()
-
-            alPushAssist.topViewController.navigationController?.pushViewController(viewController, animated: true)
-
         }
-
 
         completionHandler()
     }
@@ -385,6 +397,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
     func openChatView(dic: [AnyHashable : Any] )  {
 
+
+        let alPushAssist = ALPushAssist()
         let type = dic["AL_KEY"] as? String
         let alValueJson = dic["AL_VALUE"] as? String
 
@@ -412,16 +426,30 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
             }
 
 
-            let viewController = ConversationViewController()
+            if((alPushAssist.topViewController is ConversationViewController)){
+                var json  = [String: Any]()
 
-            if(channelKey != 0) {
-                viewController.groupId = channelKey;
-            } else {
-                viewController.userId = notificationMsg;
+                if(channelKey != 0) {
+                    json["groupId"] = channelKey
+                } else {
+                    json["userId"] = notificationMsg
+                    json["groupId"] = 0
+
+                }
+
+                NotificationCenter.default.post(name: Notification.Name(rawValue: "reloadData"), object: json)
+
+            }else{
+                let viewController = ConversationViewController()
+
+                if(channelKey != 0) {
+                    viewController.groupId = channelKey;
+                } else {
+                    viewController.userId = notificationMsg;
+                }
+
+                alPushAssist.topViewController.navigationController?.pushViewController(viewController, animated: true)
             }
-
-            let alPushAssist = ALPushAssist()
-            alPushAssist.topViewController.navigationController?.pushViewController(viewController, animated: true)
 
         }
     }

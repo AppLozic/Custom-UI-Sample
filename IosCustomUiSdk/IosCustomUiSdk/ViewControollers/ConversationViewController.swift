@@ -48,7 +48,17 @@ public class ConversationViewController: MessagesViewController,ApplozicUpdatesD
         activityIndicator.color = UIColor.gray
         view.addSubview(activityIndicator)
         self.view.bringSubview(toFront: activityIndicator)
+        loadMessages()
+        messagesCollectionView.messagesDataSource = self
+        messagesCollectionView.messagesLayoutDelegate = self
+        messagesCollectionView.messagesDisplayDelegate = self
+        messagesCollectionView.messageCellDelegate = self
+        messageInputBar.delegate = self
 
+
+    }
+
+    func loadMessages()  {
 
         DispatchQueue.global(qos: .userInitiated).async {
 
@@ -76,7 +86,6 @@ public class ConversationViewController: MessagesViewController,ApplozicUpdatesD
 
                 }
 
-
                 self.messageList =   self.messageList.reversed()
                 DispatchQueue.main.async {
                     self.activityIndicator.stopAnimating()
@@ -88,13 +97,6 @@ public class ConversationViewController: MessagesViewController,ApplozicUpdatesD
             }
 
         }
-
-        messagesCollectionView.messagesDataSource = self
-        messagesCollectionView.messagesLayoutDelegate = self
-        messagesCollectionView.messagesDisplayDelegate = self
-        messagesCollectionView.messageCellDelegate = self
-        messageInputBar.delegate = self
-
 
     }
 
@@ -341,6 +343,13 @@ public class ConversationViewController: MessagesViewController,ApplozicUpdatesD
                 print("Item Tapped")
         }
     }
+
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "reloadData"), object: nil)
+
+    }
+
 }
 
 // MARK: - MessagesDataSource
@@ -617,11 +626,7 @@ extension ConversationViewController: MessageInputBarDelegate {
 
         self.applozicClient.subscribeToConversation()
 
-        if(self.groupId != nil && self.groupId != 0){
-            self.applozicClient.subscribeToTypingStatus(forChannel: self.groupId)
-        }else{
-            self.applozicClient.subscribeToTypingStatusForOneToOne()
-        }
+        self.subscribeTypingStatus()
 
         self.navigationController?.navigationBar.isTranslucent = false
         if self.navigationController?.viewControllers.first != self {
@@ -646,38 +651,54 @@ extension ConversationViewController: MessageInputBarDelegate {
 
         ]
 
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: "reloadData"), object: nil, queue: nil, using: {[weak self]
+            (notification) in
 
+            guard let weakSelf = self else { return }
 
-        NotificationCenter.default.addObserver(forName: .UIApplicationDidEnterBackground, object: nil, queue: nil, using: { notification in
+            let data =  notification.object  as!  [String: Any]
 
-            self.appDelegate?.userId = nil
+            let groupId =  data["groupId"] as! NSNumber
 
-            self.appDelegate?.groupId = 0
-        })
-
-        NotificationCenter.default.addObserver(forName: .UIApplicationWillEnterForeground, object: nil, queue: nil, using: { notification in
-
-            if(self.groupId != nil && self.groupId != 0 ){
-                self.appDelegate?.groupId = self.groupId ?? 0
-                self.appDelegate?.userId = nil
-
+            if(groupId != 0){
+                self?.groupId = groupId
             }else{
-                self.appDelegate?.groupId = 0
-                self.appDelegate?.userId = self.userId
+                let userId =  data["userId"] as! String?
+                self?.userId = userId
             }
 
-        })
+            weakSelf.messageList.removeAll()
+            weakSelf.messagesCollectionView.reloadData()
+            weakSelf.unSubscribeTypingStatus()
+            weakSelf.setTitle()
+            weakSelf.loadMessages()
+            weakSelf.subscribeTypingStatus()
 
+
+        })
 
 
     }
 
 
 
+
     public override func viewWillDisappear(_ animated: Bool) {
 
         self.applozicClient.unsubscribeToConversation()
+        self.unSubscribeTypingStatus()
 
+    }
+
+    func subscribeTypingStatus()  {
+        if(self.groupId != nil && self.groupId != 0){
+            self.applozicClient.subscribeToTypingStatus(forChannel: self.groupId)
+        }else{
+            self.applozicClient.subscribeToTypingStatusForOneToOne()
+        }
+    }
+
+    func unSubscribeTypingStatus()  {
         if(self.groupId != nil && self.groupId != 0){
             self.applozicClient.unSubscribeToTypingStatus(forChannel: self.groupId)
         }else{
@@ -706,7 +727,7 @@ extension ConversationViewController: MessageInputBarDelegate {
             self.addMessage(_alMessage: alMessage)
             self.markConversationAsRead()
 
-        }else if(self.userId != nil && self.userId?.isEqual(alMessage.to) ?? false ){
+        }else if((alMessage.groupId  == nil || alMessage.groupId == 0) && self.userId != nil && self.userId?.isEqual(alMessage.to) ?? false ){
             self.addMessage(_alMessage: alMessage)
             self.markConversationAsRead()
         }else{
@@ -763,7 +784,7 @@ extension ConversationViewController: MessageInputBarDelegate {
 
             let contact =  contactDB.loadContact(byKey: "userId", value:userId) as ALContact
 
-            label.text = contact.displayName != nil ? contact.displayName:contact.userId + " is typing..."
+            label.text = String(format: "%@ is typing...", contact.displayName != nil ? contact.displayName:contact.userId)
             label.font = UIFont.boldSystemFont(ofSize: 16)
             messageInputBar.topStackView.addArrangedSubview(label)
             messageInputBar.topStackViewPadding.top = 6
@@ -842,30 +863,33 @@ extension ConversationViewController: MessageInputBarDelegate {
             let objectData: Data? = _alMessage.message.data(using: String.Encoding(rawValue: String.Encoding.utf8.rawValue))
             var jsonStringDic: [AnyHashable : Any]? = nil
 
-
             if let aData = objectData {
                 jsonStringDic = try! JSONSerialization.jsonObject(with: aData, options: .mutableContainers) as? [AnyHashable : Any]
             }
 
-            let latDelta: CLLocationDegrees =  Double(truncating: jsonStringDic?["lat"] as! NSNumber)
+            if let lat =  jsonStringDic?["lat"] as? String, let aDoubleLat = Double(lat), let lon =  jsonStringDic?["lon"] as? String, let aDoubleLon = Double(lon)  {
 
-            let lonDelta: CLLocationDegrees =  Double(truncating: jsonStringDic?["lon"] as! NSNumber)
+                let location =  CLLocation(latitude: aDoubleLat, longitude: aDoubleLon)
 
-            let location =  CLLocation(latitude: latDelta, longitude: lonDelta)
+                let date =  Date(timeIntervalSince1970: Double(_alMessage.createdAtTime.doubleValue/1000))
 
-            let date =  Date(timeIntervalSince1970: Double(_alMessage.createdAtTime.doubleValue/1000))
+                var mockLocationMessage =  Message(location: location, sender: sender, messageId: _alMessage.key, date: date)
 
-            var mockLocationMessage =  Message(location: location, sender: sender, messageId: _alMessage.key, date: date)
+                mockLocationMessage.createdAtTime = _alMessage.createdAtTime
 
-            mockLocationMessage.createdAtTime = _alMessage.createdAtTime
+                self.messageList.append(mockLocationMessage)
 
-            self.messageList.append(mockLocationMessage)
+            }
 
             break;
         default:
             break
 
         }
+
     }
+
+
+
 
 }

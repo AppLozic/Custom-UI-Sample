@@ -106,6 +106,10 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
         navigationItem.leftBarButtonItem = leftBarButtonItem
 
+        let rightBarButtonItem = UIBarButtonItem(image: UIImage(named: "ic_exit_to_app_white", in: Bundle(for: ConversationListViewController.self), compatibleWith: nil), style: .plain, target: self, action: #selector(logout))
+
+        navigationItem.rightBarButtonItem = rightBarButtonItem
+
         self.addViewsForAutolayout(views: [tableView])
 
         tableView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
@@ -121,6 +125,18 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
         tableView.register(MessageCell.self, forCellReuseIdentifier: "MessageCell")
 
     }
+
+
+    @objc func logout() {
+
+        let registerUserClientService: ALRegisterUserClientService = ALRegisterUserClientService()
+        registerUserClientService.logout { (response, error) in
+            if(error == nil && response?.status == "success") {
+                self.dismiss(animated: false, completion: nil)
+            }
+        }
+    }
+
 
     @objc func customBackAction() {
         guard let nav = self.navigationController else { return }

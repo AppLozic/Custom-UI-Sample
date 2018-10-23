@@ -46,5 +46,24 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+<key>NSCameraUsageDescription</key>
+<string>Allow Camera</string>
+<key>NSContactsUsageDescription</key>
+<string>Allow Contacts</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Allow location sharing!!</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Allow MicroPhone</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Allow Photos</string>
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>Allow write access</string>
+
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+</dict>
 </dict>
 </plist>
