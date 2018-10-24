@@ -63,7 +63,7 @@ public class ConversationViewController: MessagesViewController,ApplozicUpdatesD
         DispatchQueue.global(qos: .userInitiated).async {
 
             let req = MessageListRequest()
-            if(self.groupId  != nil){
+            if(self.groupId  != nil && self.groupId != 0){
                 req.channelKey =  self.groupId  // pass groupId
             }else{
                 req.userId =  self.userId  // pass userId
@@ -660,20 +660,23 @@ extension ConversationViewController: MessageInputBarDelegate {
 
             let groupId =  data["groupId"] as! NSNumber
 
+            weakSelf.unSubscribeTypingStatus()
+
             if(groupId != 0){
                 self?.groupId = groupId
+                self?.userId = nil
             }else{
                 let userId =  data["userId"] as! String?
                 self?.userId = userId
+                self?.groupId = 0
+
             }
 
             weakSelf.messageList.removeAll()
             weakSelf.messagesCollectionView.reloadData()
-            weakSelf.unSubscribeTypingStatus()
             weakSelf.setTitle()
             weakSelf.loadMessages()
             weakSelf.subscribeTypingStatus()
-
 
         })
 
@@ -771,32 +774,49 @@ extension ConversationViewController: MessageInputBarDelegate {
 
     public func onUpdateTypingStatus(_ userId: String!, status: Bool) {
 
-        if !status {
+        if(self.isShowTypingStatus(_userId: userId)){
 
-            messageInputBar.topStackView.arrangedSubviews.first?.removeFromSuperview()
-            messageInputBar.topStackViewPadding = .zero
+            if !status {
 
-        } else {
+                messageInputBar.topStackView.arrangedSubviews.first?.removeFromSuperview()
+                messageInputBar.topStackViewPadding = .zero
 
-            let label = UILabel()
+            } else {
+                messageInputBar.topStackView.arrangedSubviews.first?.removeFromSuperview()
+                messageInputBar.topStackViewPadding = .zero
 
-            let contactDB = ALContactDBService()
+                let label = UILabel()
 
-            let contact =  contactDB.loadContact(byKey: "userId", value:userId) as ALContact
+                let contactDB = ALContactDBService()
 
-            label.text = String(format: "%@ is typing...", contact.displayName != nil ? contact.displayName:contact.userId)
-            label.font = UIFont.boldSystemFont(ofSize: 16)
-            messageInputBar.topStackView.addArrangedSubview(label)
-            messageInputBar.topStackViewPadding.top = 6
-            messageInputBar.topStackViewPadding.left = 12
+                let contact =  contactDB.loadContact(byKey: "userId", value:userId) as ALContact
 
-            // The backgroundView doesn't include the topStackView. This is so things in the topStackView can have transparent backgrounds if you need it that way or another color all together
-            messageInputBar.backgroundColor = messageInputBar.backgroundView.backgroundColor
+                label.text = String(format: "%@ is typing...", contact.displayName != nil ? contact.displayName:contact.userId)
+                label.font = UIFont.boldSystemFont(ofSize: 16)
+                messageInputBar.topStackView.addArrangedSubview(label)
+                messageInputBar.topStackViewPadding.top = 6
+                messageInputBar.topStackViewPadding.left = 12
 
+                // The backgroundView doesn't include the topStackView. This is so things in the topStackView can have transparent backgrounds if you need it that way or another color all together
+                messageInputBar.backgroundColor = messageInputBar.backgroundView.backgroundColor
+
+            }
         }
 
     }
 
+    func isShowTypingStatus(_userId:String) -> Bool {
+
+        let channelService = ALChannelService()
+        var  isMemberOfChannel : Bool = false
+        if(self.groupId != nil && self.groupId != 0){
+           let array =  channelService.getListOfAllUsers(inChannel: self.groupId) as NSMutableArray
+            isMemberOfChannel = array.contains(self.groupId ?? 0)
+        }
+
+        return ((self.userId != nil &&  _userId == self.userId && (self.groupId == nil || self.groupId == 0)) || self.groupId != nil && self.groupId != 0 && isMemberOfChannel)
+
+    }
     public func onUpdateLastSeen(atStatus alUserDetail: ALUserDetail!) {
 
     }
