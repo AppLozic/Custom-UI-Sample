@@ -72,6 +72,7 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
     public override func viewWillAppear(_ animated: Bool) {
 
         self.setupView()
+        addObserver()
 
     }
 
@@ -85,6 +86,14 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
         applozicClient = ApplozicClient.init(applicationKey: "applozic-sample-app", with: self)
         applozicClient.subscribeToConversation()
+        self.loadMessages()
+    }
+
+    func loadMessages()  {
+
+        if(self.allMessages.count>0){
+            self.allMessages.removeAll()
+        }
 
         applozicClient.getLatestMessages(false, withCompletionHandler: { messageList, error in
             if error == nil {
@@ -94,6 +103,19 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
             }
         })
+
+    }
+
+    func addObserver()  {
+
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: "reloadTable"), object: nil, queue: nil, using: {[weak self]
+            (notification) in
+
+            guard self != nil else { return }
+
+            self?.loadMessages()
+        })
+
     }
 
     private func setupView() {
@@ -137,7 +159,6 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
         }
     }
 
-
     @objc func customBackAction() {
         guard let nav = self.navigationController else { return }
         let dd = nav.popViewController(animated: true)
@@ -156,24 +177,23 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
 
     public override func viewWillDisappear(_ animated: Bool) {
-        applozicClient .unsubscribeToConversation()
-
+        applozicClient.unsubscribeToConversation()
     }
 
 
     deinit {
-
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "reloadTable"), object: nil)
     }
 
 
     public func onMessageReceived(_ alMessage: ALMessage!) {
 
-        self .addMessage(alMessage)
+        self.addMessage(alMessage)
     }
 
     public func onMessageSent(_ alMessage: ALMessage!) {
 
-        self .addMessage(alMessage)
+        self.addMessage(alMessage)
 
     }
 
@@ -244,18 +264,26 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
 
     public func addMessage(_ alMessage: ALMessage) {
-        appDelegate?.sendLocalPush(message: alMessage)
+
+        if(alMessage.type != nil && alMessage.type  != OUT_BOX && !alMessage.isMsgHidden()){
+            appDelegate?.sendLocalPush(message: alMessage)
+        }
+
         var messagePresent = [ALMessage]()
+
         if let _ = alMessage.groupId {
-            messagePresent = allMessages.filter { ($0.groupId != nil) ? $0.groupId == alMessage.groupId: false }
+            messagePresent = allMessages.filter { ($0.groupId != nil) ? $0.groupId == alMessage.groupId:false }
         } else {
-            messagePresent = allMessages.filter { ($0.contactIds != nil) ? $0.contactIds == alMessage.contactIds: false }
+            messagePresent = allMessages.filter {
+                $0.groupId == nil ? (($0.contactIds != nil) ? $0.contactIds == alMessage.contactIds:false) : false
+            }
         }
 
         if let firstElement = messagePresent.first, let index = allMessages.index(of: firstElement) {
             allMessages[index] = alMessage
             self.allMessages[index] = alMessage
         } else {
+            allMessages.append(alMessage)
             self.allMessages.append(alMessage)
         }
 

@@ -24,9 +24,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
 
-        if(ALUserDefaultsHandler .isLoggedIn()){
-            ALMessageService.syncMessages()
-        }
 
         registerForNotification()
 
@@ -110,7 +107,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
-        ALMessageService.syncMessages()
+
+
+
+        ALMessageService.getLatestMessage(forUser: ALUserDefaultsHandler.getDeviceKeyString()) { (array, error) in
+
+
+            if(error == nil){
+                NotificationCenter.default.post(name: Notification.Name(rawValue: "reloadTable"), object: nil)
+
+            }
+
+        }
 
         applozicClient.subscribeToConversation()
     }

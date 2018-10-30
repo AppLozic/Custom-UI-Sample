@@ -734,9 +734,11 @@ extension ConversationViewController: MessageInputBarDelegate {
             self.addMessage(_alMessage: alMessage)
             self.markConversationAsRead()
         }else{
-            appDelegate?.sendLocalPush(message: alMessage)
+            
+            if( !alMessage.isMsgHidden()){
+                appDelegate?.sendLocalPush(message: alMessage)
+            }
         }
-
     }
 
     public func onMessageSent(_ alMessage: ALMessage!) {
