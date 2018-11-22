@@ -862,13 +862,7 @@ extension ConversationViewController: MessageInputBarDelegate {
 
         case ALMESSAGE_CONTENT_DEFAULT:
 
-            let contactDB = ALContactDBService()
-
-            let contact =  contactDB.loadContact(byKey: "userId", value: _alMessage.to) as ALContact
-
-            let displayName = Sender(id: _alMessage.to, displayName: contact.displayName == nil ? _alMessage.to: contact.displayName)
-
-            var mockTextMessage =  Message(text: _alMessage.message, sender: displayName, messageId: _alMessage.key, date:                            Date(timeIntervalSince1970: Double(_alMessage.createdAtTime.doubleValue/1000)))
+            var mockTextMessage =  Message(text: _alMessage.message, sender: self.getSender(message: _alMessage), messageId: _alMessage.key, date:                            Date(timeIntervalSince1970: Double(_alMessage.createdAtTime.doubleValue/1000)))
             mockTextMessage.createdAtTime = _alMessage.createdAtTime
             self.messageList.append(mockTextMessage)
 
@@ -876,11 +870,6 @@ extension ConversationViewController: MessageInputBarDelegate {
 
         case ALMESSAGE_CONTENT_LOCATION:
 
-            let contactDB = ALContactDBService()
-
-            let contact =  contactDB.loadContact(byKey: "userId", value: _alMessage.to) as ALContact
-
-            let sender = Sender(id: _alMessage.to, displayName: contact.displayName)
 
             let objectData: Data? = _alMessage.message.data(using: String.Encoding(rawValue: String.Encoding.utf8.rawValue))
             var jsonStringDic: [AnyHashable : Any]? = nil
@@ -895,7 +884,7 @@ extension ConversationViewController: MessageInputBarDelegate {
 
                 let date =  Date(timeIntervalSince1970: Double(_alMessage.createdAtTime.doubleValue/1000))
 
-                var mockLocationMessage =  Message(location: location, sender: sender, messageId: _alMessage.key, date: date)
+                var mockLocationMessage =  Message(location: location, sender: self.getSender(message: _alMessage), messageId: _alMessage.key, date: date)
 
                 mockLocationMessage.createdAtTime = _alMessage.createdAtTime
 
@@ -912,6 +901,19 @@ extension ConversationViewController: MessageInputBarDelegate {
     }
 
 
+    func getSender(message:ALMessage) -> Sender {
+
+        let contactDB = ALContactDBService()
+
+        var contact =   ALContact()
+            if(message.isReceivedMessage()){
+                contact =  contactDB.loadContact(byKey: "userId", value: message.to)
+                return  Sender(id: message.to, displayName: contact.displayName == nil ? message.to: contact.displayName)
+            }else{
+                contact =  contactDB.loadContact(byKey: "userId", value:ALUserDefaultsHandler.getUserId())
+               return Sender(id: ALUserDefaultsHandler.getUserId(), displayName: contact.displayName == nil ? message.to: contact.displayName)
+            }
+    }
 
 
 }
