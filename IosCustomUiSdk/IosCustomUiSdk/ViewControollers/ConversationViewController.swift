@@ -614,7 +614,7 @@ extension ConversationViewController: MessageInputBarDelegate {
 
         self.applozicClient.subscribeToConversation()
 
-        self.subscribeTypingStatus()
+
 
         self.navigationController?.navigationBar.isTranslucent = false
         if self.navigationController?.viewControllers.first != self {
@@ -801,7 +801,7 @@ extension ConversationViewController: MessageInputBarDelegate {
         var  isMemberOfChannel : Bool = false
         if(self.groupId != nil && self.groupId != 0){
            let array =  channelService.getListOfAllUsers(inChannel: self.groupId) as NSMutableArray
-            isMemberOfChannel = array.contains(self.groupId ?? 0)
+            isMemberOfChannel = array.contains(_userId)
         }
 
         return ((self.userId != nil &&  _userId == self.userId && (self.groupId == nil || self.groupId == 0)) || self.groupId != nil && self.groupId != 0 && isMemberOfChannel)
@@ -828,7 +828,7 @@ extension ConversationViewController: MessageInputBarDelegate {
     }
 
     public func onMqttConnected() {
-
+        self.subscribeTypingStatus()
     }
 
     public func markConversationAsRead(){
