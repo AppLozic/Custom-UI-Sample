@@ -21,12 +21,19 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.applozic.mobicomkit.Applozic;
+import com.applozic.mobicomkit.api.account.user.MobiComUserPreference;
 import com.applozic.mobicomkit.api.account.user.UserLogoutTask;
 import com.applozic.mobicomkit.listners.AlLogoutHandler;
+import com.applozic.mobicommons.commons.core.utils.Utils;
 import com.release.activity.ContactActivity;
 import com.release.fragments.InitiateDialogFragment;
 import com.release.fragments.MainContainerFragment;
 import com.release.fragments.MessageListFragment;
+
+import io.kommunicate.KmChatBuilder;
+import io.kommunicate.Kommunicate;
+import io.kommunicate.callbacks.KmCallback;
+import io.kommunicate.users.KMUser;
 
 public class MainActivity extends AppCompatActivity  implements NavigationDrawerFragment.NavigationDrawerCallbacks,
         MessageListFragment.OnFragmentInteractionListener,MainContainerFragment.OnFragmentInteractionListener{
@@ -48,6 +55,10 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
         actionBar.setTitle(mTitle);
         mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
         mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout));
+
+        Kommunicate.init(getBaseContext(), "applozic-sample-app");
+
+
 
     }
 
@@ -132,6 +143,28 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
                 }
             });
         }
+        //Launch Support Chat
+        if (position == 3) {
+            Utils.printLog(MainActivity.this, "Testing", "Launching support chat");
+
+            KMUser user = new KMUser();
+            user.setUserId(MobiComUserPreference.getInstance(this).getUserId()); // Pass a unique key
+            user.setImageLink(MobiComUserPreference.getInstance(this).getImageLink()); // Optional
+
+            new KmChatBuilder(MainActivity.this).setKmUser(user).launchChat(new KmCallback() {
+                @Override
+                public void onSuccess(Object message) {
+                    Utils.printLog(MainActivity.this, "ChatTest", "Success : " + message);
+                }
+
+                @Override
+                public void onFailure(Object error) {
+                    Utils.printLog(MainActivity.this, "ChatTest", "Failure : " + error);
+                }
+            });
+
+        }
+
 
     }
 

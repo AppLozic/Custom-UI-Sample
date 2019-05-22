@@ -54,7 +54,7 @@ public class ContactListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         final Contact current = contactList.get(position);
         Glide.with(mContext)
                 .load(current.getImageURL())
-                .apply(new RequestOptions().placeholder(R.drawable.profile).error(R.drawable.profile))
+                .apply(new RequestOptions().placeholder(R.drawable.applozic_profile_dot).error(R.drawable.applozic_profile_dot))
                 .into(holder.contactPhoto);
         holder.contactName.setText(current.getDisplayName());
         holder.contactNumber.setText(current.getContactNumber());

@@ -82,7 +82,7 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                 }
 
                 if(contact.getImageURL() == null || contact.getImageURL().equalsIgnoreCase(null)) {
-                    holder.contactPhoto.setImageResource(R.drawable.profile);
+                    holder.contactPhoto.setImageResource(R.drawable.applozic_profile_dot);
                 }
                 else{
                     Glide.with(mContext).load(contact.getImageURL()).
@@ -113,7 +113,9 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                     holder.message.setText(current.getMessage());
                 }
 
-                holder.createdAtTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(current.getCreatedAtTime()));
+                holder.createdAtTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.
+                        getFormattedDateAndTime(mContext,current.getCreatedAtTime(),R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS));
+
                 holder.singleRowLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -136,7 +138,7 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                 if(messageDatabaseService.getUnreadMessageCountForChannel(current.getGroupId()) != 0)
                     holder.unreadSmsCount.setText(String.valueOf(messageDatabaseService.getUnreadMessageCountForChannel(current.getGroupId())));
                 if(channel.getImageUrl() == null || channel.getImageUrl().equalsIgnoreCase(null)) {
-                    holder.contactPhoto.setImageResource(R.drawable.group_profile);
+                    holder.contactPhoto.setImageResource(R.drawable.applozic_group_icon);
                 }
                 else {
                     Glide.with(mContext).load(channel.getImageUrl()).
@@ -168,7 +170,9 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                     holder.message.setText(current.getMessage());
                 }
 
-                holder.createdAtTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(current.getCreatedAtTime()));
+                holder.createdAtTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.
+                        getFormattedDateAndTime(mContext,current.getCreatedAtTime(),R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS));
+
                 holder.singleRowLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {

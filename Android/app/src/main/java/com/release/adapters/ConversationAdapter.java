@@ -52,6 +52,8 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 /**
  * Created by shivam on 9/12/17.
  */
@@ -129,24 +131,24 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 holder.sendProgressBar.setVisibility(View.GONE);
                 holder.overlayIcon.setVisibility(View.GONE);
 
-                holder.messageTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(message.getCreatedAtTime()));
+                holder.messageTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(mContext, message.getCreatedAtTime(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS));
 
                 if(!message.isSentToServer()){
                     if(message.hasAttachment()) {
                         holder.sendProgressBar.bringToFront();
                         holder.sendProgressBar.setVisibility(View.VISIBLE);
                     }
-                    holder.status.setImageResource(R.drawable.pending_status);
+                    holder.status.setImageResource(R.drawable.applozic_ic_action_message_pending);
                 } else {
                     if(message.hasAttachment())
                         holder.sendProgressBar.setVisibility(View.GONE);
                     if (Message.Status.READ.getValue().equals(message.getStatus()) ||
                             Message.Status.SENT.getValue().equals(message.getStatus())) {
-                        holder.status.setImageResource(R.drawable.send_status);
+                        holder.status.setImageResource(R.drawable.applozic_ic_action_message_sent);
                     } else if (Message.Status.DELIVERED_AND_READ.getValue().equals(message.getStatus())) {
-                        holder.status.setImageResource(R.drawable.delivered_and_read_status);
+                        holder.status.setImageResource(R.drawable.applozic_ic_action_message_read);
                     } else if (Message.Status.DELIVERED.getValue().equals(message.getStatus())) {
-                        holder.status.setImageResource(R.drawable.delivered_status);
+                        holder.status.setImageResource(R.drawable.applozic_ic_action_message_delivered);
                     }
                 }
 
@@ -174,7 +176,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
                             });
                         } else if (message.getAttachmentType().equals(Message.AUDIO)) {
-                            holder.audioViewForAttachment.setImageResource(R.drawable.attachment);
+                            holder.audioViewForAttachment.setImageResource(R.drawable.applozic_ic_action_attachment);
                             holder.audioViewForAttachment.setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void onClick(View view) {
@@ -312,7 +314,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     receivedHolder.profileName.setText(contact.getDisplayName());
                 }
 
-                receivedHolder.messageTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(message.getCreatedAtTime()));
+                receivedHolder.messageTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime( mContext, message.getCreatedAtTime(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS));
 //                receivedHolder.profileName.setText(message.getContactIds());
                 /**
                  * Download Location From Received Message.
@@ -332,7 +334,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         Glide.with(mContext).load(url)
                                 .thumbnail(0.5f)
                                 .apply(new RequestOptions()
-                                .placeholder(R.drawable.location))
+                                .placeholder(R.drawable.applozic_ic_location_on_white_24dp))
                                 .into(receivedHolder.locationViewForAttachment);
                         final String finalLatitude = latitude;
                         final String finalLongitude = longitude;
@@ -375,7 +377,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             receivedHolder.overlayIcon.bringToFront();
                             final String videoPath = message.getFilePaths().get(0);
                             Glide.with(mContext)
-                                    .load(Uri.fromFile(new File(videoPath))).apply(new RequestOptions().placeholder(R.drawable.video))
+                                    .load(Uri.fromFile(new File(videoPath))).apply(new RequestOptions().placeholder(R.drawable.applozic_video_default_thumbnail))
                                     .into(receivedHolder.videoViewForAttachment);
                             receivedHolder.videoViewForAttachment.setOnClickListener(new View.OnClickListener() {
                                 @Override
@@ -663,7 +665,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
      * For Attachments we use different imageview for different attachment types which can be replaced with custom layouts
      */
     class ReceivedMessageHolder extends RecyclerView.ViewHolder {
-        ImageView profileImage;
+        CircleImageView profileImage;
         TextView profileName;
         TextView messageBody;
         TextView messageTime;
@@ -700,24 +702,24 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 //contact
                 Contact contact = new AppContactService(mContext).getContactById(messageList.get(0).getContactIds());
                 if(contact.getImageURL() == null || contact.getImageURL().equalsIgnoreCase(null)) {
-                    profileImage.setImageResource(R.drawable.profile);
+                    profileImage.setImageResource(R.drawable.applozic_profile_dot);
                 }
                 else{
                     Glide.with(mContext).load(contact.getImageURL()).
                             thumbnail(0.5f).
-                            apply(new RequestOptions().placeholder(R.drawable.profile)).
+                            apply(new RequestOptions().placeholder(R.drawable.applozic_profile_dot)).
                             into(profileImage);
                 }
             }else{
                 //channel
                 Channel channel = ChannelService.getInstance(mContext).getChannelInfo(messageList.get(0).getGroupId());
                 if(channel.getImageUrl() == null || channel.getImageUrl().equalsIgnoreCase(null)) {
-                    profileImage.setImageResource(R.drawable.group_profile);
+                    profileImage.setImageResource(R.drawable.applozic_group_icon);
                 }
                 else {
                     Glide.with(mContext).load(channel.getImageUrl()).
                             thumbnail(0.5f).
-                            apply(new RequestOptions().placeholder(R.drawable.group_profile)).
+                            apply(new RequestOptions().placeholder(R.drawable.applozic_group_icon)).
                             into(profileImage);
                 }
             }

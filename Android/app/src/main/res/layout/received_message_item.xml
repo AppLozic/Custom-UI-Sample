@@ -13,7 +13,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         android:layout_marginLeft="8dp"
-        android:src="@drawable/delete"/>
+        android:src="@drawable/applozic_profile_dot"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -40,7 +40,7 @@
             android:maxWidth="240dp"
             android:padding="8dp"
             android:text="HIHI"
-            android:textColor="#fff"
+            android:textColor="#0c0c0c"
             app:layout_constraintHorizontal_bias="0.04"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/message_time"

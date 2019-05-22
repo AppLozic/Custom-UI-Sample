@@ -13,7 +13,7 @@
         android:visibility="gone"
         android:scaleType="centerCrop"
         android:adjustViewBounds="true"
-        android:src="@drawable/image"/>
+        android:src="@drawable/applozic_ic_image_photo_album"/>
 
     <ImageButton
         android:layout_width="60dp"
@@ -24,7 +24,7 @@
         android:layout_centerInParent="true"
         android:id="@+id/overlay_icon"
         android:background="@null"
-        android:src="@drawable/play_icon"/>
+        android:src="@drawable/applozic_video_play_icon"/>
 
     <ProgressBar
         android:id="@+id/sending_progress_bar"
@@ -64,7 +64,7 @@
         android:id="@+id/attachment_video"
         android:layout_centerInParent="true"
         android:scaleType="centerCrop"
-        android:src="@drawable/video"
+        android:src="@drawable/applozic_video_default_thumbnail"
         android:gravity="center"
         android:adjustViewBounds="true"
         android:visibility="gone"/>
@@ -77,7 +77,7 @@
         android:gravity="center"
         android:scaleType="centerCrop"
         android:visibility="gone"
-        android:src="@drawable/location"/>
+        android:src="@drawable/applozic_ic_location_on_white_24dp"/>
 
     <ImageView
         android:id="@+id/attachment_other"
@@ -87,7 +87,7 @@
         android:gravity="center"
         android:scaleType="centerCrop"
         android:visibility="gone"
-        android:src="@drawable/attachment_other"/>
+        android:src="@drawable/ic_documentreceive"/>
 
     <ImageView
         android:id="@+id/attachment_audio"
@@ -97,6 +97,6 @@
         android:gravity="center"
         android:scaleType="centerCrop"
         android:visibility="gone"
-        android:src="@drawable/audio"/>
+        android:src="@drawable/km_audio_button_background"/>
 
 </RelativeLayout>

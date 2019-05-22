@@ -18,15 +18,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <provider
-            android:name="android.support.v4.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths" />
-        </provider>
 
         <activity android:name=".MainActivity" />
         <activity
@@ -40,12 +31,12 @@
             </intent-filter>
         </activity>
 
-        <meta-data
-            android:name="com.applozic.loginActivity"
-            android:value="com.applozic.mobicomkit.sample.LoginActivity" />
-        <meta-data
-            android:name="com.applozic.mobicomkit.notification.smallIcon"
-            android:resource="@drawable/ic_launcher" /> <!-- Launcher white Icon -->
+        <!--<meta-data-->
+            <!--android:name="com.applozic.loginActivity"-->
+            <!--android:value="com.applozic.mobicomkit.sample.LoginActivity" />-->
+        <!--<meta-data-->
+            <!--android:name="com.applozic.mobicomkit.notification.smallIcon"-->
+            <!--android:resource="@drawable/ic_launcher" /> &lt;!&ndash; Launcher white Icon &ndash;&gt;-->
 
         <meta-data
             android:name="com.applozic.application.key"
@@ -56,60 +47,10 @@
         <meta-data
             android:name="com.applozic.mqtt.server.url"
             android:value="@string/default_mqtt_server_url" />
-        <meta-data
-            android:name="main_folder_name"
-            android:value="@string/default_media_location_folder" />
-        <meta-data
-            android:name="com.applozic.take.order.userId"
-            android:value="@string/take_order_userid" />
-        <meta-data
-            android:name="com.facebook.sdk.ApplicationId"
-            android:value="@string/facebook_app_id" />
-        <meta-data
-            android:name="com.package.name"
-            android:value="${applicationId}" />
-        <meta-data
-            android:name="share_text"
-            android:value="@string/invite_message" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAv1wf5eMyErPaU3l8EnMUmOsoYJ2joC70" />
-        <meta-data
-            android:name="com.applozic.mobicomkit.uiwidgets.toolbar.tap.activity"
-            android:value="com.applozic.mobicomkit.sample.MainActivity" />
-        <meta-data
-            android:name="activity.open.on.notification"
-            android:value="com.release.activity.ConversationActivity" />
-        <meta-data
-            android:name="activity.open.on.call.button.click"
-            android:value="com.applozic.mobicomkit.sample.MainActivity" />
-        <meta-data
-            android:name="io.fabric.ApiKey"
-            android:value="9b43bb084d2988834ffc7cc5c9de46ad80356861" />
-
-        <!-- Applozic -->
-
-        <service
-            android:name="com.applozic.mobicomkit.api.conversation.MessageIntentService"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
-        <service
-            android:name="com.applozic.mobicomkit.api.conversation.ApplozicIntentService"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
-        <service
-            android:name="com.applozic.mobicomkit.api.conversation.ApplozicMqttIntentService"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
-        <service
-            android:name="com.applozic.mobicomkit.api.people.UserIntentService"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
-        <service
-            android:name="com.applozic.mobicomkit.api.conversation.ConversationIntentService"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
-        <service android:name="org.eclipse.paho.android.service.MqttService" />
 
         <activity
             android:name=".activity.ConversationActivity"

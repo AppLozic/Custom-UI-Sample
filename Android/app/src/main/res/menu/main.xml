@@ -10,7 +10,7 @@
     <item
         android:title="NEW"
         android:id="@+id/action_contact"
-        android:icon="@drawable/add_contact_icon"
+        android:icon="@drawable/applozic_ic_person_add_white"
         app:showAsAction="always" />
 
     <item

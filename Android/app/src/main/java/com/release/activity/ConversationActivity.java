@@ -444,7 +444,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         toolbarTitle.setText(contact.getDisplayName());
         Contact temp = new AppContactService(ConversationActivity.this).getContactById(mContact.getContactIds());
         toolbarStatus.setVisibility(View.VISIBLE);
-        toolbarStatus.setText(temp.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(mContact.getLastSeenAt()));
+        toolbarStatus.setText(temp.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(ConversationActivity.this,mContact.getLastSeenAt(),R.string.JUST_NOW, R.plurals.MINUTES_AGO, R.plurals.HOURS_AGO, R.string.YESTERDAY));
         ApplozicConversation.getMessageListForContact(ConversationActivity.this, (new ContactDatabase(ConversationActivity.this)).getContactById(contactId), null, new MessageListHandler() {
             @Override
             public void onResult(List<Message> messageList, ApplozicException e) {
@@ -570,32 +570,34 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                 .setContentType(Message.ContentType.ATTACHMENT.getValue())
                 .setTo(mContact.getContactIds())
                 .setFilePath(filePath)
-                .send(new MediaUploadProgressHandler() {
-                    @Override
-                    public void onUploadStarted(ApplozicException e) {
+               .send(new MediaUploadProgressHandler() {
+                         @Override
+                         public void onUploadStarted(ApplozicException e, String oldMessageKey) {
 
-                    }
+                         }
 
-                    @Override
-                    public void onProgressUpdate(int percentage, ApplozicException e) {
+                         @Override
+                         public void onProgressUpdate(int percentage, ApplozicException e, String oldMessageKey) {
 
-                    }
+                         }
 
-                    @Override
-                    public void onCancelled(ApplozicException e) {
+                         @Override
+                         public void onCancelled(ApplozicException e, String oldMessageKey) {
 
-                    }
+                         }
 
-                    @Override
-                    public void onCompleted(ApplozicException e) {
+                         @Override
+                         public void onCompleted(ApplozicException e, String oldMessageKey) {
 
-                    }
+                         }
 
-                    @Override
-                    public void onSent(Message message) {
+                         @Override
+                         public void onSent(Message message, String oldMessageKey) {
 
-                    }
-                });
+                         }
+
+                }
+                    );
     }
 
     /**
@@ -950,7 +952,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                     toolbarStatus.setVisibility(View.VISIBLE);
                     toolbarStatus.setText("TYPING.....");
                 } else {
-                    toolbarStatus.setText(mContact.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(mContact.getLastSeenAt()));
+                    toolbarStatus.setText(mContact.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(ConversationActivity.this,mContact.getLastSeenAt(),R.string.JUST_NOW, R.plurals.MINUTES_AGO, R.plurals.HOURS_AGO, R.string.YESTERDAY));
                 }
             }
         }
@@ -970,7 +972,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                     toolbarStatus.setText("ONLINE");
                 }else if(temp.getLastSeenAt() != 0){
                     toolbarStatus.setVisibility(View.VISIBLE);
-                    toolbarStatus.setText("Last seen: " + DateUtils.getDateAndTimeForLastSeen(mContact.getLastSeenAt()));
+                    toolbarStatus.setText("Last seen: " + DateUtils.getDateAndTimeForLastSeen(ConversationActivity.this,mContact.getLastSeenAt(),R.string.JUST_NOW, R.plurals.MINUTES_AGO, R.plurals.HOURS_AGO, R.string.YESTERDAY));
                 }else{
                     toolbarStatus.setText("");
                 }
@@ -982,6 +984,21 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     public void onMqttDisconnected() {
         Log.d("Checking","..................................." + "MQQQT DISCONNECTED" + "...................................");
         Applozic.connectPublish(ConversationActivity.this);
+    }
+
+    @Override
+    public void onMqttConnected() {
+
+    }
+
+    @Override
+    public void onUserOnline() {
+
+    }
+
+    @Override
+    public void onUserOffline() {
+
     }
 
     @Override

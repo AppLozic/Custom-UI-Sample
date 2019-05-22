@@ -9,6 +9,7 @@
         android:layout_width="wrap_content"
         android:background="@drawable/rounded_sent_textview"
         android:layout_height="wrap_content"
+        android:layout_marginRight="8dp"
         app:layout_constraintRight_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="parent">
 
@@ -16,7 +17,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/message_body"
-            android:textColor="#000"
+            android:textColor="#fff"
             android:padding="8dp"
             android:maxWidth="240dp"
             android:text="Check me"
