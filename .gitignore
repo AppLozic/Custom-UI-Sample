@@ -1,6 +1,6 @@
 /Android/.gradle/*
 /Android/.idea/*
 /Android/.build/*
-/Android/.build/*
+/Android/build/*
 .idea/*
 *.iml
