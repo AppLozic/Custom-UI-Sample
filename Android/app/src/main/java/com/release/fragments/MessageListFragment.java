@@ -1,6 +1,5 @@
 package com.release.fragments;
 
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -20,20 +20,19 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.applozic.mobicomkit.Applozic;
 import com.applozic.mobicomkit.api.MobiComKitConstants;
 import com.applozic.mobicomkit.api.conversation.ApplozicConversation;
 import com.applozic.mobicomkit.api.conversation.Message;
-import com.applozic.mobicomkit.api.conversation.MobiComConversationService;
 import com.applozic.mobicomkit.api.conversation.database.MessageDatabaseService;
 import com.applozic.mobicomkit.exception.ApplozicException;
 import com.applozic.mobicomkit.listners.ApplozicUIListener;
 import com.applozic.mobicomkit.listners.MessageListHandler;
 import com.release.MainActivity;
 import com.release.R;
+import com.release.activity.MessageActivity;
 import com.release.adapters.MessageRowAdapter;
 
 import java.util.ArrayList;
@@ -41,22 +40,22 @@ import java.util.List;
 
 public class MessageListFragment extends Fragment implements ApplozicUIListener{
 
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    List<Message> arrayListMessageList = new ArrayList<>();
 
-    private OnFragmentInteractionListener mListener;
-    List<Message> listOfMessages = new ArrayList<>();
+    OnFragmentInteractionListener mListener;
 
+    //ui elements
+    private FloatingActionButton floatingActionButtonAddChat;
     RecyclerView recyclerView;
+
     MessageRowAdapter adapter;
 
     private boolean loading = true;
     int pastVisibleItems, visibleItemCount, totalItemCount;
     private BroadcastReceiver unreadCountBroadcastReceiver;
 
-    public MessageListFragment() {
-        // Required empty public constructor
-    }
+    // required empty public constructor
+    public MessageListFragment() { }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,14 +64,16 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+
         View view = inflater.inflate(R.layout.fragment_message_list, container, false);
+
         recyclerView = view.findViewById(R.id.show_message_list);
         recyclerView.setHasFixedSize(true);
         final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
+        //for pagination
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
@@ -90,7 +91,7 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
                                 @Override
                                 public void onResult(List<Message> messageList, ApplozicException e) {
                                     if(e==null){
-                                        listOfMessages.addAll(messageList);
+                                        arrayListMessageList.addAll(messageList);
                                         adapter.notifyDataSetChanged();
                                     }else{
                                         e.printStackTrace();
@@ -120,8 +121,8 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
      * @param messageList List of different conversation
      */
     public void setView(List<Message> messageList){
-        listOfMessages = messageList;
-        adapter = new MessageRowAdapter(getActivity(),listOfMessages);
+        arrayListMessageList = messageList;
+        adapter = new MessageRowAdapter(getActivity(), arrayListMessageList);
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
     }
@@ -161,7 +162,7 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
     }
 
     private void changeAppBar(){
-        ((MainActivity) getActivity()).getSupportActionBar().setTitle("Chat");
+        ((MessageActivity) getActivity()).getSupportActionBar().setTitle("Chat");
     }
 
     @Override
@@ -198,7 +199,7 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
     @Override
     public void onMessageReceived(Message message) {
         Toast.makeText(getActivity(),"New Message received",Toast.LENGTH_SHORT).show();
-        ApplozicConversation.addLatestMessage(message,listOfMessages);
+        ApplozicConversation.addLatestMessage(message, arrayListMessageList);
         adapter.notifyDataSetChanged();
     }
 
@@ -254,6 +255,21 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
     }
 
     @Override
+    public void onMqttConnected() {
+
+    }
+
+    @Override
+    public void onUserOnline() {
+
+    }
+
+    @Override
+    public void onUserOffline() {
+
+    }
+
+    @Override
     public void onChannelUpdated() {
 
     }
@@ -270,6 +286,11 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
 
     @Override
     public void onMessageMetadataUpdated(String keyString) {
+
+    }
+
+    @Override
+    public void onUserMute(boolean mute, String userId) {
 
     }
 

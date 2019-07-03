@@ -6,7 +6,7 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.support.annotation.Nullable;
-import android.support.v7.graphics.Palette;
+//import android.support.v7.graphics.Palette;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -75,7 +75,7 @@ public class PhotoFullPopupWindow extends PopupWindow {
             if (Build.VERSION.SDK_INT >= 16) {
                 parent.setBackground(new BitmapDrawable(mContext.getResources(), Constants.fastblur(Bitmap.createScaledBitmap(bitmap, 50, 50, true))));// ));
             } else {
-                onPalette(Palette.from(bitmap).generate());
+//                onPalette(Palette.from(bitmap).generate());
 
             }
             photoView.setImageBitmap(bitmap);
@@ -99,7 +99,7 @@ public class PhotoFullPopupWindow extends PopupWindow {
                             if (Build.VERSION.SDK_INT >= 16) {
                                 parent.setBackground(new BitmapDrawable(mContext.getResources(), Constants.fastblur(Bitmap.createScaledBitmap(resource, 50, 50, true))));// ));
                             } else {
-                                onPalette(Palette.from(resource).generate());
+//                                onPalette(Palette.from(resource).generate());
 
                             }
                             photoView.setImageBitmap(resource);
@@ -118,11 +118,11 @@ public class PhotoFullPopupWindow extends PopupWindow {
 
     }
 
-    public void onPalette(Palette palette) {
-        if (null != palette) {
-            ViewGroup parent = (ViewGroup) photoView.getParent().getParent();
-            parent.setBackgroundColor(palette.getDarkVibrantColor(Color.GRAY));
-        }
-    }
+//    public void onPalette(Palette palette) {
+//        if (null != palette) {
+//            ViewGroup parent = (ViewGroup) photoView.getParent().getParent();
+//            parent.setBackgroundColor(palette.getDarkVibrantColor(Color.GRAY));
+//        }
+//    }
 
 }

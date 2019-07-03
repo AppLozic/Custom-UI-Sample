@@ -21,10 +21,12 @@ import com.applozic.mobicomkit.contact.AppContactService;
 import com.applozic.mobicomkit.contact.database.ContactDatabase;
 import com.applozic.mobicomkit.exception.ApplozicException;
 import com.applozic.mobicomkit.listners.MessageListHandler;
+import com.applozic.mobicommons.commons.core.utils.DateUtils;
 import com.applozic.mobicommons.people.channel.Channel;
 import com.applozic.mobicommons.people.contact.Contact;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.release.R;
 import com.release.activity.ConversationActivity;
 
@@ -85,8 +87,8 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                     holder.contactPhoto.setImageResource(R.drawable.profile);
                 }
                 else{
-                    Glide.with(mContext).load(contact.getImageURL()).
-                            thumbnail(0.5f).
+                    Glide.with(mContext).load(contact.getImageURL()).apply(RequestOptions.circleCropTransform())
+                            .thumbnail(0.5f).
                             into(holder.contactPhoto);
                 }
                 if(current.hasAttachment()){
@@ -113,7 +115,7 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                     holder.message.setText(current.getMessage());
                 }
 
-                holder.createdAtTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(current.getCreatedAtTime()));
+                holder.createdAtTime.setText(DateUtils.getFormattedDateAndTime(mContext, current.getCreatedAtTime(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS));
                 holder.singleRowLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -139,8 +141,8 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                     holder.contactPhoto.setImageResource(R.drawable.group_profile);
                 }
                 else {
-                    Glide.with(mContext).load(channel.getImageUrl()).
-                            thumbnail(0.5f).
+                    Glide.with(mContext).load(channel.getImageUrl()).apply(RequestOptions.circleCropTransform())
+                            .thumbnail(0.5f).
                             into(holder.contactPhoto);
                 }
 
@@ -168,7 +170,7 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                     holder.message.setText(current.getMessage());
                 }
 
-                holder.createdAtTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(current.getCreatedAtTime()));
+                holder.createdAtTime.setText(DateUtils.getFormattedDateAndTime(mContext, current.getCreatedAtTime(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS));
                 holder.singleRowLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {

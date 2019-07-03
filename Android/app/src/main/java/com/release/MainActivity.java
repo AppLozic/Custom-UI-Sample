@@ -14,7 +14,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,14 +23,17 @@ import com.applozic.mobicomkit.Applozic;
 import com.applozic.mobicomkit.api.account.user.UserLogoutTask;
 import com.applozic.mobicomkit.listners.AlLogoutHandler;
 import com.release.activity.ContactActivity;
+import com.release.activity.MessageActivity;
 import com.release.fragments.InitiateDialogFragment;
 import com.release.fragments.MainContainerFragment;
 import com.release.fragments.MessageListFragment;
 
 public class MainActivity extends AppCompatActivity  implements NavigationDrawerFragment.NavigationDrawerCallbacks,
         MessageListFragment.OnFragmentInteractionListener,MainContainerFragment.OnFragmentInteractionListener{
-//Comment
+
     private UserLogoutTask userLogoutTask;
+
+
 
     private NavigationDrawerFragment mNavigationDrawerFragment;
 
@@ -76,12 +78,8 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
         // update the main content by replacing fragments
 
         if (position == 1) {
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            MessageListFragment messageListFragment = new MessageListFragment();
-            fragmentTransaction.replace(R.id.container,messageListFragment);
-            fragmentTransaction.addToBackStack(null);
-            fragmentTransaction.commit();
+            Intent i = new Intent(this, MessageActivity.class);
+            startActivity(i);
             return;
         }
         if (position == 0) {
@@ -89,7 +87,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             MainContainerFragment mainContainerFragment = new MainContainerFragment();
-            fragmentTransaction.replace(R.id.container,mainContainerFragment);
+            fragmentTransaction.replace(R.id.containerForMessageList,mainContainerFragment);
             fragmentTransaction.commit();
             return;
         }
@@ -160,14 +158,6 @@ public class MainActivity extends AppCompatActivity  implements NavigationDrawer
         /*if (id == R.id.action_settings) {
             return true;
         }*/
-
-        if(id == R.id.action_chat){
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            MessageListFragment messageListFragment = new MessageListFragment();
-            fragmentTransaction.replace(R.id.container,messageListFragment);
-            fragmentTransaction.commit();
-        }
 
         if(id == R.id.action_contact){
             startActivity(new Intent(this, ContactActivity.class));

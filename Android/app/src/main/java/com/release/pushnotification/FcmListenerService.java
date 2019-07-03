@@ -3,9 +3,6 @@ package com.release.pushnotification;
 
 import android.util.Log;
 
-import com.applozic.mobicomkit.api.account.register.RegistrationResponse;
-import com.applozic.mobicomkit.api.account.user.MobiComUserPreference;
-import com.applozic.mobicomkit.api.account.user.PushNotificationTask;
 import com.applozic.mobicomkit.api.notification.MobiComPushReceiver;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -23,7 +20,7 @@ public class FcmListenerService extends FirebaseMessagingService {
         if (remoteMessage.getData().size() > 0) {
             if (MobiComPushReceiver.isMobiComPushNotification(remoteMessage.getData())) {
                 Log.i(TAG, "Applozic notification processing...");
-                MobiComPushReceiver.processMessageAsync(this, remoteMessage.getData());
+                //MobiComPushReceiver.processMessageAsync(this, remoteMessage.getData());
                 return;
             }
         }

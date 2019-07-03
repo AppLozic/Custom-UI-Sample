@@ -44,6 +44,21 @@
     <string name="enter_user_id_info">Please Enter UserId</string>
     <string name="empty_user_id_info">UserId is empty</string>
 
+    <!-- for last seen-->
+    <string name="JUST_NOW">Just Now</string>
+    <plurals name="MINUTES">
+        <item quantity="one">%d min ago</item>
+        <item quantity="many">%d mins ago</item>
+    </plurals>
+    <plurals name="HOURS">
+        <item quantity="one">%d hr ago</item>
+        <item quantity="many">%d hrs ago</item>
+    </plurals>
+    <plurals name="YESTERDAY">
+        <item quantity="one">yesterday</item>
+        <item quantity="many">%d days ago</item>
+    </plurals>
+
     <!-- support or admin  contact information ...please add details here  -->
     <string name="support_contact_display_name">AppLozic</string>
     <string name="initiate_chat_info">Initiate chat with user</string>

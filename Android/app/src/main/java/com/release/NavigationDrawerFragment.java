@@ -227,10 +227,6 @@ public class NavigationDrawerFragment extends Fragment {
             return true;
         }
 
-        if (item.getItemId() == R.id.action_chat) {
-
-        }
-
         return super.onOptionsItemSelected(item);
     }
 

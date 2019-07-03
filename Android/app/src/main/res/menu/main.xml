@@ -2,15 +2,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.applozic.mobicomkit.sample.MainActivity">
-    <item
-        android:id="@+id/action_chat"
-        android:title="@string/action_example"
-        app:showAsAction="always" />
 
     <item
-        android:title="NEW"
         android:id="@+id/action_contact"
-        android:icon="@drawable/add_contact_icon"
+        android:icon="@drawable/profile"
+        android:title="NEW"
         app:showAsAction="always" />
 
     <item

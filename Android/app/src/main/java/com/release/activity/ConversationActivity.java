@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.media.AsyncPlayer;
 import android.media.MediaRecorder;
 import android.net.ConnectivityManager;
 import android.net.Uri;
@@ -81,6 +82,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -149,6 +151,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      * It processes intent to open conversation with selected contact or group.
      * Swipe Refresh Layout is used to display messages so that we could load more messages on swipe.
      * It also handles sending messages and handling editText input.
+     *
      * @param savedInstanceState
      */
     @Override
@@ -183,7 +186,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         chatBox = findViewById(R.id.chatbox);
 
         mFileName = getExternalCacheDir().getAbsolutePath();
-        mFileName = mFileName +"/"+ UUID.randomUUID().toString() + "recording.amr";
+        mFileName = mFileName + "/" + UUID.randomUUID().toString() + "recording.amr";
         sendMessageContent.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -192,7 +195,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                String val=charSequence.toString();
+                String val = charSequence.toString();
                 changeButton(val);
             }
 
@@ -251,15 +254,25 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                if(messageList.size() == 0){
+                if (messageList.size() == 0) {
                     Toast.makeText(ConversationActivity.this, "NO Conversation", Toast.LENGTH_SHORT).show();
                     swipeRefreshLayout.setRefreshing(false);
-                }else {
+                } else {
                     if (type.equalsIgnoreCase("Contact")) {
                         Message message = messageList.get(0);
+                        Iterator i = messageList.iterator();
+                        while (message.getType() == 100) {
+                            message = (Message) i.next();
+                        }
+                        Log.d("ConversationActivityTst", "Type of message being passed: " + message.getType());
                         loadNextContactList(message);
                     } else {
                         Message message = messageList.get(0);
+                        Iterator i = messageList.iterator();
+                        while (message.getType() == 100) {
+                            message = (Message) i.next();
+                        }
+                        Log.d("ConversationActivityTst", "Type of message being passed: " + message.getType());
                         loadNextChannelList(message);
                     }
                 }
@@ -281,7 +294,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      * Set the functionality of recording audio.
      * Handle view's animation
      */
-    private void recordAudio(){
+    private void recordAudio() {
         //IMPORTANT
         recordButton.setRecordView(recordView);
         recordView.setOnRecordListener(new OnRecordListener() {
@@ -297,7 +310,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                 try {
                     mRecorder.prepare();
                 } catch (IOException e) {
-                    Log.e(TAG+"", "prepare() failed");
+                    Log.e(TAG + "", "prepare() failed");
                 }
                 mRecorder.start();
             }
@@ -321,7 +334,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                 mRecorder.stop();
                 mRecorder.release();
                 mRecorder = null;
-                if(mChannel != null)
+                if (mChannel != null)
                     sendAttachmentToGroup(mFileName);
                 else
                     sendAttachmentToContact(mFileName);
@@ -331,9 +344,9 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
             public void onLessThanSecond() {
                 //When the record time is less than One Second
                 chatBox.setVisibility(View.VISIBLE);
-                try{
+                try {
                     mRecorder.stop();
-                }catch(RuntimeException stopException){
+                } catch (RuntimeException stopException) {
                     File file = new File(mFileName);
                     file.delete();
                     mRecorder.release();
@@ -364,22 +377,20 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         recordView.setLessThanSecondAllowed(false);
         //set Custom sounds onRecord
         //you can pass 0 if you don't want to play sound in certain state
-        recordView.setCustomSounds(R.raw.record_start,R.raw.record_finished,0);
+        recordView.setCustomSounds(R.raw.record_start, R.raw.record_finished, 0);
     }
 
 
     /**
      * Changes Button. If user starts typing a send button will be shown otherwise record audio button will be shown.
+     *
      * @param val Indicates when user has typed or not
      */
-    private void changeButton(String val){
-        if (val.isEmpty())
-        {
+    private void changeButton(String val) {
+        if (val.isEmpty()) {
             sendTextButton.setVisibility(View.INVISIBLE);
             recordButton.setVisibility(View.VISIBLE);
-        }
-        else
-        {
+        } else {
             sendTextButton.setVisibility(View.VISIBLE);
             recordButton.setVisibility(View.GONE);
         }
@@ -387,6 +398,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * Used to format the time for which recording has been done.
+     *
      * @param milliseconds the total time in milliseconds of recording.
      * @return
      */
@@ -413,9 +425,10 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         if (bundle != null) {
+            //from activity
             if (intent.hasExtra("CHECK_INTENT")) {
-                //from activity
                 type = intent.getStringExtra("TYPE");
+                Log.d("ConversationActivityTst", "Conversation Type: " + type);
                 if (type.equals("CHANNEL")) {
                     int channelId = intent.getIntExtra("ID", 12345);
                     isGroup = true;
@@ -439,6 +452,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * A setter for messageList. Also sets adapter for recycler view
+     *
      * @param messages
      */
     public void setMessageList(List<Message> messages) {
@@ -452,11 +466,13 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      * Fetches messages for a contact.
      * Also sets display name of contact in the toolbar.
      * Uses ApplozicConversation.getMessageListForContact(..) method to fetch messages. createdAtTime parameter is passed as null to fetch only latest 60 messages.
+     *
      * @param contactId contact id of the opened chat. It is used to fetch contact details.
      */
     public void getMessageListForContact(String contactId) {
         final Contact contact = new AppContactService(ConversationActivity.this).getContactById(contactId);
         mContact = contact;
+        mChannel = null;
         if (contact != null) {
             Intent intent = new Intent(ConversationActivity.this, UserIntentService.class);
             intent.putExtra(UserIntentService.USER_ID, contactId);
@@ -465,15 +481,16 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         toolbarTitle.setText(contact.getDisplayName());
         Contact temp = new AppContactService(ConversationActivity.this).getContactById(mContact.getContactIds());
         toolbarStatus.setVisibility(View.VISIBLE);
-        toolbarStatus.setText(temp.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.plurals.YESTERDAY));
+        toolbarStatus.setText(temp.isOnline() ? "ONLINE" : "Last seen: " + DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.plurals.YESTERDAY));
         ApplozicConversation.getMessageListForContact(ConversationActivity.this, (new ContactDatabase(ConversationActivity.this)).getContactById(contactId), null, new MessageListHandler() {
             @Override
             public void onResult(List<Message> messageList, ApplozicException e) {
                 if (e != null) {
+                    Toast.makeText(getApplicationContext(), "Error loading messages.", Toast.LENGTH_LONG).show();
+                }else {
+                    setMessageList(messageList);
+                    ApplozicConversation.markAsRead(ConversationActivity.this, contact.getUserId(), null);
                 }
-                MobiComConversationService mobiComConversationService = new MobiComConversationService(ConversationActivity.this);
-                mobiComConversationService.read(contact, null);
-                setMessageList(messageList);
             }
         });
     }
@@ -482,21 +499,26 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      * Fetches messages for a channel.
      * Also sets channel name in the toolbar.
      * Uses ApplozicConversation.getMessageListForChannel(..) method to fetch messages. createdAtTime parameter is passed as null to fetch only latest 60 messages.
+     *
      * @param channelId contact id of the opened channel. It is used to fetch channel details.
      */
-    public void getMessageListForChannel(int channelId) {
+    public void getMessageListForChannel(final int channelId) {
 
         final Channel channel = ChannelService.getInstance(ConversationActivity.this).getChannelInfo(channelId);
         mChannel = channel;
+        mContact = null;
         toolbarTitle.setText(channel.getName());
         ApplozicConversation.getMessageListForChannel(ConversationActivity.this, ChannelDatabaseService.getInstance(ConversationActivity.this).getChannelByChannelKey(channelId), null, new MessageListHandler() {
             @Override
             public void onResult(List<Message> messageList, ApplozicException e) {
                 if (e != null) {
+                    Toast.makeText(getApplicationContext(), "Error loading messages.", Toast.LENGTH_LONG).show();
+
+
+                }else {
+                    setMessageList(messageList);
+                    ApplozicConversation.markAsRead(ConversationActivity.this, null, channelId);
                 }
-                MobiComConversationService mobiComConversationService = new MobiComConversationService(ConversationActivity.this);
-                mobiComConversationService.read(null, channel);
-                setMessageList(messageList);
             }
         });
     }
@@ -513,7 +535,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
         contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
         contentSelectionIntent.setType("image/* audio/* video/*");
-        Intent[] intentArray = new Intent[]{takePictureIntent,takeVideoIntent, takeAudioIntent};
+        Intent[] intentArray = new Intent[]{takePictureIntent, takeVideoIntent, takeAudioIntent};
         chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
         chooserIntent.putExtra(Intent.EXTRA_TITLE, "Choose a file");
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
@@ -522,6 +544,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method is called when activity resumes after user has selected a file to attach.
+     *
      * @param requestCode
      * @param resultCode
      * @param data
@@ -569,7 +592,8 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method returns filepath of the file selected by the user.
-     * @param selectedFile File selected by user
+     *
+     * @param selectedFile   File selected by user
      * @param filePathColumn audio or video or image
      * @return
      */
@@ -584,6 +608,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method sends attachment to contact.
+     *
      * @param filePath path of the attachment to be sent
      */
     private void sendAttachmentToContact(String filePath) {
@@ -622,6 +647,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method sends attachment to group
+     *
      * @param filePath path of the attachment to be sent
      */
     private void sendAttachmentToGroup(String filePath) {
@@ -651,7 +677,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      */
     public void showRunTimePermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this,Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) {
+                != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestStoragePermission();
         }
     }
@@ -667,6 +693,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     /**
      * This method checks if permission are granted or not and does the relevant action.
      * If permission are granted everything is resumed as normal otherwise we stop.
+     *
      * @param requestCode
      * @param permissions
      * @param grantResults
@@ -682,7 +709,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                     return;
                 }
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        || ActivityCompat.shouldShowRequestPermissionRationale(this,Manifest.permission.RECORD_AUDIO)) {
+                        || ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO)) {
                     finish();
                 } else {
 //
@@ -720,11 +747,11 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      * @param message Contains information about client id.
      */
     public void loadNextContactList(final Message message) {
-        ApplozicConversation.getMessageListForContact(this, (new ContactDatabase(this)).getContactById(message.getContactIds()), messageList.get(0).getCreatedAtTime(), new MessageListHandler() {
+        ApplozicConversation.getMessageListForContact(this, message.getContactIds(), messageList.get(0).getCreatedAtTime(), new MessageListHandler() {
             @Override
             public void onResult(List<Message> listMessage, ApplozicException e) {
                 if (e == null) {
-                    if(listMessage.size() == 0){
+                    if (listMessage.size() == 0) {
                         Toast.makeText(ConversationActivity.this, "No more messages to load", Toast.LENGTH_SHORT).show();
                     }
                     messageList.addAll(0, listMessage);
@@ -749,7 +776,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
             @Override
             public void onResult(List<Message> listMessage, ApplozicException e) {
                 if (e == null) {
-                    if(listMessage.size() == 0){
+                    if (listMessage.size() == 0) {
                         Toast.makeText(ConversationActivity.this, "No more messages to load", Toast.LENGTH_SHORT).show();
                     }
                     messageList.addAll(0, listMessage);
@@ -763,26 +790,80 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method checks if an incoming message is for the opened conversation or not.
+     *
      * @param message Incoming message received by the broadcast.
      * @return
      */
     public boolean isMessageForAdapter(Message message) {
+        //conversation message is a NON-DATE(type should not be 100) message of the conversation currently opened
+        Message conversationMessage = messageList.get(0);
+        Iterator i = messageList.iterator();
+        while (conversationMessage.getType() == 100) {
+            conversationMessage = (Message) i.next();
+        }
+
+        Log.d("ConversationActivityTst", "Checking if message is for the opened conversation.");
         if (message.isGroupMessage()) {
-            if (messageList.get(0).isGroupMessage()) {
-                if (message.getGroupId().equals(messageList.get(0).getGroupId())) {
+            Log.d("ConversationActivityTst", "Note: It is a group message.");
+            if (messageList.get(1).isGroupMessage()) {
+                Log.d("ConversationActivityTst", "Opened conversation is group with group id: " + conversationMessage.getGroupId());
+                Log.d("ConversationActivityTst", "Message recieved for: " + message.getGroupId());
+                if (message.getGroupId().equals(conversationMessage.getGroupId())) {
+                    Log.d("ConversationActivityTst", "Message recieved for: " + message.getGroupId());
                     return true;
 
                 } else {
                     return false;
                 }
             } else {
+
                 return false;
             }
         } else {
-            if (messageList.get(0).isGroupMessage()) {
+            Log.d("ConversationActivityTst", "Note: It is a 1 to 1 chat message.");
+            if (conversationMessage.isGroupMessage()) {
                 return false;
             } else {
-                if (message.getTo().equals(messageList.get(0).getTo())) {
+                if (message.getTo().equals(conversationMessage.getTo())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+    }
+
+    public boolean isRecievedMessageForAdapter(Message message) {
+        //conversation message is a NON-DATE(type should not be 100) message of the conversation currently opened
+        Message conversationMessage = messageList.get(0);
+        Iterator i = messageList.iterator();
+        while (conversationMessage.getType() == 100) {
+            conversationMessage = (Message) i.next();
+        }
+
+        Log.d("ConversationActivityTst", "Checking if message is for the opened conversation.");
+        if (message.isGroupMessage()) {
+            Log.d("ConversationActivityTst", "Note: It is a group message.");
+            if (messageList.get(1).isGroupMessage()) {
+                Log.d("ConversationActivityTst", "Opened conversation is group with group id: " + conversationMessage.getGroupId());
+                Log.d("ConversationActivityTst", "Message recieved for: " + message.getGroupId());
+                if (message.getGroupId().equals(conversationMessage.getGroupId())) {
+                    Log.d("ConversationActivityTst", "Message recieved for: " + message.getGroupId());
+                    return true;
+
+                } else {
+                    return false;
+                }
+            } else {
+
+                return false;
+            }
+        } else {
+            Log.d("ConversationActivityTst", "Note: It is a 1 to 1 chat message.");
+            if (conversationMessage.isGroupMessage()) {
+                return false;
+            } else {
+                if (message.getContactIds().equals(conversationMessage.getContactIds())) {
                     return true;
                 } else {
                     return false;
@@ -793,12 +874,14 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method is used to add a new message to adapter when it is sent from device.
+     *
      * @param message This is the message sent by user
      */
     public void updateAdapterOnSent(Message message) {
         if (isMessageForAdapter(message)) {
             messageList.add(message);
             conversationAdapter.notifyDataSetChanged();
+            ApplozicConversation.markAsRead(this, message.getContactIds(), message.getGroupId());
             sendMessageContent.getText().clear();
             recyclerView.scrollToPosition(messageList.size() - 1);
         }
@@ -806,12 +889,18 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method is used to update the messageList when the message is delivered to the user.
+     *
      * @param message This is the message which is delivered.
      */
     public void updateAdapterOnDelivered(Message message) {
         //check message in message list
-        if(isMessageForAdapter(message)){
+        for (Message m : messageList) {
+            if (m.getKeyString().equals(message.getKeyString()))
+                Utils.printLog(this, "TestKl", "Message : " + m);
+        }
+        if (isMessageForAdapter(message)) {
             int index = messageList.indexOf(message);
+            Log.d("ConversationActivityTst", "Delivered message is for the opened conversation. Index:" + index);
             if (index != -1) {
                 messageList.set(index, message);
                 conversationAdapter.notifyDataSetChanged();
@@ -821,6 +910,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method is used to update the delivery status of messages when participant has seen the messages.
+     *
      * @param userId userId of the conversation for which the broadcast is received.
      */
     public void updateSeenStatus(String userId) {
@@ -840,12 +930,12 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     protected void onResume() {
         super.onResume();
         Applozic.connectPublish(this);
-        if(isGroup){
-            Applozic.subscribeToTyping(ConversationActivity.this,mChannel, null);
-        }else{
+        if (isGroup) {
+            Applozic.subscribeToTyping(ConversationActivity.this, mChannel, null);
+        } else {
             Applozic.subscribeToTyping(ConversationActivity.this, null, mContact);
         }
-        if(connectivityReceiver != null) {
+        if (connectivityReceiver != null) {
             registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
         }
         Applozic.getInstance(this).registerUIListener(this);
@@ -854,9 +944,9 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     @Override
     protected void onPause() {
         super.onPause();
-        if(isGroup){
-            Applozic.unSubscribeToTyping(ConversationActivity.this,mChannel, null);
-        }else{
+        if (isGroup) {
+            Applozic.unSubscribeToTyping(ConversationActivity.this, mChannel, null);
+        } else {
             Applozic.unSubscribeToTyping(ConversationActivity.this, null, mContact);
         }
         if (connectivityReceiver != null) {
@@ -870,23 +960,36 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     /**
      * This method is called when messages are sent from device.
      * Also you need to set SentToServer status of message to true.
+     *
      * @param message This is the message which has just sent from device.
      */
     @Override
     public void onMessageSent(Message message) {
         Log.d("Checking ", "..................................." + "Message Sent CALLED" + "...................................");
         message.setSentToServer(true);
-        updateAdapterOnDelivered(message);
+
+        if (message.equals(messageList.get(messageList.indexOf(message)))) {
+            messageList.remove(message);
+            updateAdapterOnSent(message);
+        }
     }
 
     /**
      * This method is called when a message has been received from the server. It adds message to messageList.
+     *
      * @param message this is the message which is just received from the server.
      */
     @Override
     public void onMessageReceived(Message message) {
         Log.d("Checking ", "..................................." + "Message Received CALLED" + "...................................");
-        updateAdapterOnSent(message);
+
+        if(isRecievedMessageForAdapter(message)){
+            messageList.add(message);
+            conversationAdapter.notifyDataSetChanged();
+            ApplozicConversation.markAsRead(this, message.getContactIds(), message.getGroupId());
+            //recyclerView.smoothScrollToPosition(messageList.size()-1);
+        }
+        //updateAdapterOnDelivered(message);
     }
 
 
@@ -898,15 +1001,18 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     /**
      * This method is called everytime a new message is either sent or received.
      * We can add message to messageList if the message is sent from device since received messages are already handled in onMessageReceived
+     *
      * @param message this is the new synced message
-     * @param key key of the contact or group for which this new message is synced.
+     * @param key     key of the contact or group for which this new message is synced.
      */
     @Override
     public void onMessageSync(Message message, String key) {
         Log.d("Checking ", "..................................." + "Message Sync CALLED" + "...................................");
         if (message.isTypeOutbox()) {
+
             updateAdapterOnSent(message);
         }
+
     }
 
     @Override
@@ -918,6 +1024,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      * This method is called when message has been successfully delivered to the participant.
      * Also if message is directly delivered and read, this method is called and not the onAllMessagesRead method.
      * We can update the delivery status of message and notify the adapter.
+     *
      * @param message this is the message which is delivered.
      * @param userId
      */
@@ -935,6 +1042,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     /**
      * This method is called when participant of a one-to-one chat reads all the delivered messages.
      * We can update the seen status of messages from this method.
+     *
      * @param userId userId of the contact for which the read broadcast is received.
      */
     @Override
@@ -951,28 +1059,29 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method is called when a user starts typing.
-     * @param userId userId of the contact which has started typing
+     *
+     * @param userId   userId of the contact which has started typing
      * @param isTyping is 1 if user is typing otherwise it is 0.
      */
     @Override
     public void onUpdateTypingStatus(String userId, String isTyping) {
-        if(isGroup){
-            if(ChannelService.getInstance(ConversationActivity.this).isUserAlreadyPresentInChannel(mChannel.getKey(),userId)){
+        if (isGroup) {
+            if (ChannelService.getInstance(ConversationActivity.this).isUserAlreadyPresentInChannel(mChannel.getKey(), userId)) {
                 if (isTyping.equals("1")) {
                     toolbarStatus.setVisibility(View.VISIBLE);
-                    toolbarStatus.setText(userId+" TYPING");
+                    toolbarStatus.setText(userId + " TYPING");
                 } else {
                     toolbarStatus.setText(null);
                     toolbarStatus.setVisibility(View.GONE);
                 }
             }
-        }else {
+        } else {
             if (userId.equals(mContact.getContactIds())) {
                 if (isTyping.equals("1")) {
                     toolbarStatus.setVisibility(View.VISIBLE);
                     toolbarStatus.setText("TYPING.....");
                 } else {
-                    toolbarStatus.setText(mContact.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.plurals.YESTERDAY));
+                    toolbarStatus.setText(mContact.isOnline() ? "ONLINE" : "Last seen: " + DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.plurals.YESTERDAY));
                 }
             }
         }
@@ -980,20 +1089,21 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     /**
      * This method is called whenever a user has opened and left applozic chat. We can update whether user is online or not.
+     *
      * @param userId userId of the contact for which broadcast is received.
      */
     @Override
     public void onUpdateLastSeen(String userId) {
-        if(!isGroup){
-            if(userId.equals(mContact.getUserId())){
+        if (!isGroup) {
+            if (userId.equals(mContact.getUserId())) {
                 Contact temp = new AppContactService(ConversationActivity.this).getContactById(userId);
-                if(temp.isOnline()){
+                if (temp.isOnline()) {
                     toolbarStatus.setVisibility(View.VISIBLE);
                     toolbarStatus.setText("ONLINE");
-                }else if(temp.getLastSeenAt() != 0){
+                } else if (temp.getLastSeenAt() != 0) {
                     toolbarStatus.setVisibility(View.VISIBLE);
                     toolbarStatus.setText("Last seen: " + DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.plurals.YESTERDAY));
-                }else{
+                } else {
                     toolbarStatus.setText("");
                 }
             }
@@ -1002,7 +1112,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
     @Override
     public void onMqttDisconnected() {
-        Log.d("Checking","..................................." + "MQQQT DISCONNECTED" + "...................................");
+        Log.d("Checking", "..................................." + "MQQQT DISCONNECTED" + "...................................");
         Applozic.connectPublish(ConversationActivity.this);
     }
 
@@ -1026,14 +1136,15 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         Log.d("Checking ", "..................................." + "META DATA CALLED" + "...................................");
     }
 
-    public void connectPublishAgain(){
+    public void connectPublishAgain() {
         Log.d("SHIVAMMM", "Chey aahiudi asida");
         Applozic.connectPublish(ConversationActivity.this);
     }
 
-    class ConnectMqtt extends BroadcastReceiver{
+    class ConnectMqtt extends BroadcastReceiver {
         static final private String CONNECTIVITY_CHANGE = "android.net.conn.CONNECTIVITY_CHANGE";
         boolean firstConnect = true;
+
         @Override
         public void onReceive(@NonNull Context context, @NonNull Intent intent) {
             String action = intent.getAction();
@@ -1051,7 +1162,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                         firstConnect = false;
                         Intent connectivityIntent = new Intent(context, ApplozicIntentService.class);
                         connectivityIntent.putExtra(ApplozicIntentService.AL_SYNC_ON_CONNECTIVITY, true);
-                        ApplozicIntentService.enqueueWork(context,connectivityIntent);
+                        ApplozicIntentService.enqueueWork(context, connectivityIntent);
                         connectPublishAgain();
                     }
                 }
