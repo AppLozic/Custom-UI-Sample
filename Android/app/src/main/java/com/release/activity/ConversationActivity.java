@@ -64,6 +64,7 @@ import com.applozic.mobicomkit.listners.MediaUploadProgressHandler;
 import com.applozic.mobicomkit.listners.MessageListHandler;
 import com.applozic.mobicommons.commons.core.utils.DateUtils;
 import com.applozic.mobicommons.commons.core.utils.Utils;
+import com.applozic.mobicommons.file.FileUtils;
 import com.applozic.mobicommons.json.GsonUtils;
 import com.applozic.mobicommons.people.channel.Channel;
 import com.applozic.mobicommons.people.contact.Contact;
@@ -531,10 +532,12 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         Intent takeAudioIntent = new Intent(Intent.ACTION_PICK, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI);
         Intent takeVideoIntent = new Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
         Intent takePictureIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
         Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
         contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
         contentSelectionIntent.setType("image/* audio/* video/*");
+
+        Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
+
         Intent[] intentArray = new Intent[]{takePictureIntent, takeVideoIntent, takeAudioIntent};
         chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
         chooserIntent.putExtra(Intent.EXTRA_TITLE, "Choose a file");
@@ -553,6 +556,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PICK_FILE && resultCode == RESULT_OK && data != null) {
             Uri selectedUri = data.getData();
+
             String[] columns = {MediaStore.Images.Media.DATA,
                     MediaStore.Images.Media.MIME_TYPE};
 
@@ -566,19 +570,9 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
             String mimeType = cursor1.getString(mimeTypeColumnIndex);
             cursor1.close();
 
-            String filePath = "";
-            Uri selectedFile = data.getData();
 
-            if (mimeType.startsWith("image")) {
-                String filePathColumn[] = {MediaStore.Images.Media.DATA};
-                filePath = getFilePathFromChoosenFile(selectedFile, filePathColumn);
-            } else if (mimeType.startsWith("video")) {
-                String filePathColumn[] = {MediaStore.Video.Media.DATA};
-                filePath = getFilePathFromChoosenFile(selectedFile, filePathColumn);
-            } else if (mimeType.startsWith("audio")) {
-                String filePathColumn[] = {MediaStore.Audio.Media.DATA};
-                filePath = getFilePathFromChoosenFile(selectedFile, filePathColumn);
-            }
+            Uri selectedFile = data.getData();
+            String filePath = FileUtils.getPath(this, selectedUri);
 
             if (type.equalsIgnoreCase("Contact")) {
                 //This is a contact
@@ -620,12 +614,13 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
                     @Override
                     public void onUploadStarted(ApplozicException e, String oldMessageKey) {
-
+                        //conversationAdapter.notifyDataSetChanged();
+                        Log.d("ConversationActivityTst", "Sending attachment message.");
                     }
 
                     @Override
                     public void onProgressUpdate(int percentage, ApplozicException e, String oldMessageKey) {
-
+                        Log.d("ConversationActivityTst", percentage+"% sent.");
                     }
 
                     @Override
@@ -635,12 +630,12 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
                     @Override
                     public void onCompleted(ApplozicException e, String oldMessageKey) {
-
+                        Log.d("ConversationActivityTst", "Completed.");
                     }
 
                     @Override
                     public void onSent(Message message, String oldMessageKey) {
-
+                        Log.d("ConversationActivityTst","Attachment message sent.");
                     }
                 });
     }
@@ -796,11 +791,13 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      */
     public boolean isMessageForAdapter(Message message) {
         //conversation message is a NON-DATE(type should not be 100) message of the conversation currently opened
-        Message conversationMessage = messageList.get(0);
-        Iterator i = messageList.iterator();
-        while (conversationMessage.getType() == 100) {
-            conversationMessage = (Message) i.next();
-        }
+            Message conversationMessage = messageList.get(0);
+
+
+            Iterator i = messageList.iterator();
+            while (conversationMessage.getType() == 100) {
+                conversationMessage = (Message) i.next();
+            }
 
         Log.d("ConversationActivityTst", "Checking if message is for the opened conversation.");
         if (message.isGroupMessage()) {
@@ -831,6 +828,28 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                 }
             }
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if(getSupportFragmentManager().getBackStackEntryCount()==2) {
+            getSupportFragmentManager().popBackStack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+
+        if(getSupportFragmentManager().getBackStackEntryCount()==2) {
+            getSupportFragmentManager().popBackStack();
+        } else {
+            return super.onSupportNavigateUp();
+
+        }
+        return true;
     }
 
     public boolean isRecievedMessageForAdapter(Message message) {
@@ -864,6 +883,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                 return false;
             } else {
                 if (message.getContactIds().equals(conversationMessage.getContactIds())) {
+
                     return true;
                 } else {
                     return false;
@@ -883,7 +903,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
             conversationAdapter.notifyDataSetChanged();
             ApplozicConversation.markAsRead(this, message.getContactIds(), message.getGroupId());
             sendMessageContent.getText().clear();
-            recyclerView.scrollToPosition(messageList.size() - 1);
+            recyclerView.smoothScrollToPosition(messageList.size() - 1);
         }
     }
 
@@ -895,7 +915,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     public void updateAdapterOnDelivered(Message message) {
         //check message in message list
         for (Message m : messageList) {
-            if (m.getKeyString().equals(message.getKeyString()))
+            if (m.getKeyString() != null && m.getKeyString().equals(message.getKeyString()))
                 Utils.printLog(this, "TestKl", "Message : " + m);
         }
         if (isMessageForAdapter(message)) {
@@ -987,7 +1007,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
             messageList.add(message);
             conversationAdapter.notifyDataSetChanged();
             ApplozicConversation.markAsRead(this, message.getContactIds(), message.getGroupId());
-            //recyclerView.smoothScrollToPosition(messageList.size()-1);
+            recyclerView.smoothScrollToPosition(messageList.size()-1);
         }
         //updateAdapterOnDelivered(message);
     }

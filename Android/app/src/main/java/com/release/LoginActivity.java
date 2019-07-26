@@ -103,13 +103,6 @@ public class LoginActivity extends AppCompatActivity {
             cancel = true;
         }
 
-        // Check for a valid email address.
-        if (TextUtils.isEmpty(email)) {
-            mEmailAddress.setError("Email field required");
-            focusView = mEmailAddress;
-            cancel = true;
-        }
-
         if (cancel) {
             // There was an error; don't attempt login and focus the first
             // form field with an error.

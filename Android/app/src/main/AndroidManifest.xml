@@ -19,13 +19,14 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        tools:replace="android:appComponentFactory"
-        android:appComponentFactory="somehtimf"
         android:theme="@style/AppTheme">
 
         <service android:name="com.release.pushnotification.FcmListenerService"/>
 
-        <activity android:name=".activity.MessageActivity"></activity>
+        <activity android:name=".activity.MessageActivity"
+            android:parentActivityName=".MainActivity">
+
+        </activity>
 
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -66,7 +67,8 @@
             android:value="com.applozic.mobicomkit.sample.MainActivity" />
         <meta-data
             android:name="activity.open.on.notification"
-            android:value="com.release.activity.ConversationActivity" />
+            android:value="com.release.activity.ConversationActivity"
+            />
         <meta-data
             android:name="activity.open.on.call.button.click"
             android:value="com.applozic.mobicomkit.sample.MainActivity" />
@@ -77,7 +79,7 @@
         <activity
             android:name=".activity.ConversationActivity"
             android:launchMode="singleTop"
-            android:parentActivityName=".MainActivity"
+            android:parentActivityName=".activity.MessageActivity"
             android:theme="@style/Theme.ConversationActivity" />
         <activity
             android:name=".activity.ContactActivity"

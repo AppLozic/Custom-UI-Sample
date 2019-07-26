@@ -254,6 +254,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             holder.audioViewForAttachment.setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void onClick(View view) {
+                                    Log.d("ClickTest", "Audio clicked");
                                     Intent intent = new Intent();
                                     intent.setAction(android.content.Intent.ACTION_VIEW);
                                     final File file = new File(audioPath);
@@ -272,6 +273,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         } else {
                             //image
+                            Log.d("ConversationActivityTst", message.getFilePaths().get(0));
                             holder.imageViewForAttachment.setVisibility(View.VISIBLE);
                             final String imgPath = message.getFilePaths().get(0);
                             Glide.with(mContext).load(imgPath).
