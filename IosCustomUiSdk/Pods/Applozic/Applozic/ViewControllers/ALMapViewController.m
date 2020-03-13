@@ -144,33 +144,34 @@
         NSString *title;
         title = (status == kCLAuthorizationStatusDenied) ? @"Location services are off" : @"Background location is not enabled";
         NSString *message = @"To use background location you must turn on 'Always' in the Location Services Settings";
-        
-        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:title
-                                                            message:message
-                                                           delegate:self
-                                                  cancelButtonTitle:
-                                  NSLocalizedStringWithDefaultValue(@"cancelOptionText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Cancel", @"")
-                                                  otherButtonTitles:
-                                  NSLocalizedStringWithDefaultValue(@"settings", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Settings", @"")
-                                  , nil];
-        [alertView show];
+
+        UIAlertController * uiAlertController = [UIAlertController
+                                                 alertControllerWithTitle:title
+                                                 message:message
+                                                 preferredStyle:UIAlertControllerStyleAlert];
+
+        UIAlertAction* settingButton = [UIAlertAction
+                                   actionWithTitle:NSLocalizedStringWithDefaultValue(@"settings", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Settings", @"")
+                                   style:UIAlertActionStyleDefault
+                                   handler:^(UIAlertAction * action) {
+                                       NSURL *settingsURL = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                                       [[UIApplication sharedApplication] openURL:settingsURL];
+                                   }];
+
+        UIAlertAction* cancelButton = [UIAlertAction
+                                   actionWithTitle:NSLocalizedStringWithDefaultValue(@"cancelOptionText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Cancel", @"")
+                                   style:UIAlertActionStyleDefault
+                                   handler:^(UIAlertAction * action) {
+
+                                   }];
+        [uiAlertController addAction:settingButton];
+        [uiAlertController addAction:cancelButton];
+
+        [self.presentedViewController.navigationController presentViewController:uiAlertController animated:YES completion:nil];
     }
     else if (status == kCLAuthorizationStatusNotDetermined) {
         // The user has not enabled any location services. Request background authorization.
         [locationManager requestAlwaysAuthorization];
-    }
-}
-
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
-{
-    if (buttonIndex == 1) {
-        // Send the user to the Settings for this app
-        NSURL *settingsURL = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
-        [[UIApplication sharedApplication] openURL:settingsURL];
-    }
-    else
-    {
-        [self.navigationController popViewControllerAnimated:YES];
     }
 }
 

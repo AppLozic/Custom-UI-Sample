@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0930"
+   LastUpgradeVersion = "1100"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,10 +14,10 @@
             buildForArchiving = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "FA1E703D5B6DD26FB1CBEB96EE42132D"
+               BlueprintIdentifier = "2D834CBBD351637528FA6B93E42745DC"
+               BuildableName = "MessageKit.framework"
                BlueprintName = "MessageKit"
-               ReferencedContainer = "container:Pods.xcodeproj"
-               BuildableName = "MessageKit.framework">
+               ReferencedContainer = "container:Pods.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>

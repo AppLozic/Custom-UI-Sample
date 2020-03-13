@@ -118,8 +118,8 @@
 
 -(IBAction)sendButtonAction:(id)sender
 {
-    self.outputFilePath = [recorder.url path];
-    [self.audioAttchmentDelegate audioAttachment: self.outputFilePath];
+    NSString * path = [recorder.url path];
+    [self.audioAttchmentDelegate audioAttachment: path];
     [self.navigationController popViewControllerAnimated:YES];
 }
 
@@ -178,7 +178,7 @@
     
     [[NSNotificationCenter defaultCenter] addObserver: self
                                              selector: @selector(actionWhenAppInBackground)
-                                                 name: @"APP_ENTER_IN_BACKGROUND"
+                                                 name: UIApplicationDidEnterBackgroundNotification
                                                object: nil];
     
     [[NSNotificationCenter defaultCenter] addObserver: self
@@ -191,7 +191,7 @@
 -(void)viewWillDisappear:(BOOL)animated
 {
     [[NSNotificationCenter defaultCenter] removeObserver: self
-                                                    name: @"APP_ENTER_IN_BACKGROUND"
+                                                    name: UIApplicationDidEnterBackgroundNotification
                                                   object: nil];
     
     [[NSNotificationCenter defaultCenter] removeObserver: self
@@ -224,12 +224,23 @@
 
 -(void)alertDialog:(NSString *)msg
 {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle: @"Message"
-                                                    message: msg
-                                                   delegate: nil
-                                          cancelButtonTitle: @"OK"
-                                          otherButtonTitles: nil];
-    [alert show];
+    
+    UIAlertController * alert = [UIAlertController
+                                 alertControllerWithTitle:@"Message"
+                                 message:msg
+                                 preferredStyle:UIAlertControllerStyleAlert];
+    
+    
+    UIAlertAction* okButtonAction = [UIAlertAction
+                                actionWithTitle:@"OK"
+                                style:UIAlertActionStyleDefault
+                                handler:^(UIAlertAction * action) {
+                                }];
+    
+    [alert addAction:okButtonAction];
+    
+    [self presentViewController:alert animated:YES completion:nil];
+    
 }
 
 //=====================================================
@@ -246,12 +257,25 @@
 
 -(void)audioPlayerDidFinishPlaying:(AVAudioPlayer *)player successfully:(BOOL)flag
 {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle: @"DONE"
-                                                    message: @"FINISH PLAYING !!!"
-                                                   delegate: nil
-                                          cancelButtonTitle: @"OK"
-                                          otherButtonTitles: nil];
-    [alert show];
+
+    
+    UIAlertController * alert = [UIAlertController
+                                 alertControllerWithTitle:@"DONE"
+                                 message:@"FINISH PLAYING !!!"
+                                 preferredStyle:UIAlertControllerStyleAlert];
+    
+    
+    UIAlertAction* alertActionButton = [UIAlertAction
+                                        actionWithTitle:NSLocalizedStringWithDefaultValue(@"okText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"OK" , @"")
+                                        style:UIAlertActionStyleDefault
+                                        handler:^(UIAlertAction * action) {
+                                        }];
+    
+    [alert addAction:alertActionButton];
+
+    [self presentViewController:alert animated:YES completion:nil];
+
+    
 }
 
 @end

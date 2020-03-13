@@ -71,8 +71,7 @@
 -(BOOL) isContactExist:(NSString *) value{
    
     DB_CONTACT* contact= [alContactDBService getContactByKey:@"userId" value:value];
-    return !(contact.lastSeenAt==nil);
-    
+    return contact != nil && contact.userId != nil;
 }
 #pragma update OR insert contact
 
@@ -157,4 +156,8 @@
     return [alContactDBService isUserDeleted:userId];
 }
 
+-(ALUserDetail *)updateMuteAfterTime:(NSNumber*)notificationAfterTime andUserId:(NSString*)userId{
+    ALContactDBService *contactDataBase = [[ALContactDBService alloc] init];
+   return  [contactDataBase updateMuteAfterTime:notificationAfterTime andUserId:userId];
+}
 @end

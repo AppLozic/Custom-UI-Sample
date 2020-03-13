@@ -7,6 +7,7 @@
 //
 
 #import "ALUserDetail.h"
+#import "ALUserDefaultsHandler.h"
 
 @interface ALUserDetail ()
 
@@ -43,7 +44,8 @@
     self.deletedAtTime = [JSONString valueForKey:@"deletedAtTime"];
     self.metadata = [JSONString valueForKey:@"metadata"];
     self.roleType = [JSONString valueForKey:@"roleType"];
-    
+    self.notificationAfterTime = [JSONString valueForKey:@"notificationAfterTime"];
+    self.email = [JSONString valueForKey:@"email"];
 }
 
 -(void)userDetail
@@ -69,6 +71,9 @@
     self.deletedAtTime = [self getNSNumberFromJsonValue:json[@"deletedAtTime"]];
     self.metadata = [[NSMutableDictionary  alloc] initWithDictionary:json[@"metadata"]];
     self.roleType = [self getNSNumberFromJsonValue:json[@"roleType"]];
+    self.notificationAfterTime = [self getNSNumberFromJsonValue:json[@"notificationAfterTime"]];
+    self.email = [self getStringFromJsonValue: json[@"email"]];
+
 }
 
 -(NSString *)getDisplayName
@@ -92,6 +97,16 @@
     {
         self.userIdString = [tempString substringFromIndex:1];
     }
+}
+
+-(BOOL)isNotificationMuted{
+    
+    long secsUtc1970 = [[NSNumber numberWithDouble:[[NSDate date]timeIntervalSince1970] ] longValue ]*1000L;
+    return (_notificationAfterTime && [_notificationAfterTime longValue]> secsUtc1970);
+}
+
+- (BOOL)isChatDisabled {
+    return _metadata && [_metadata[AL_DISABLE_USER_CHAT] boolValue];
 }
 
 @end

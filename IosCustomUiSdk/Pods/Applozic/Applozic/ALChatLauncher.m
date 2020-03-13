@@ -18,6 +18,8 @@
 #import "ALMessagesViewController.h"
 #import "ALUserService.h"
 
+const int REGULAR_CONTACTS = 0;
+
 @interface ALChatLauncher ()<ALChatViewControllerDelegate, ALMessagesViewDelegate>
 
 @end
@@ -67,11 +69,41 @@
         ALSLog(ALLoggerSeverityInfo, @"CALLED_VIA_NOTIFICATION");
         
         UINavigationController * conversationViewNavController = [self createNavigationControllerForVC:chatView];
+        conversationViewNavController.modalPresentationStyle = UIModalPresentationFullScreen;
         conversationViewNavController.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
         [viewController presentViewController:conversationViewNavController animated:YES completion:nil];
     }
 }
 
+/**
+ * Use this to launch individual chat using conversationId. 
+ */
+-(void)launchIndividualChat:(NSString *)userId withGroupId:(NSNumber*)groupID withConversationId:(NSNumber *)conversationId
+    andViewControllerObject:(UIViewController *)viewController andWithText:(NSString *)text
+{
+    self.chatLauncherFLAG = [NSNumber numberWithInt:1];
+    
+    if(groupID){
+        [self launchIndividualChatForGroup:userId withGroupId:groupID withDisplayName:nil andViewControllerObject:viewController andWithText:text];
+    }else{
+        UIStoryboard* storyboard = [UIStoryboard storyboardWithName:@"Applozic" bundle:[NSBundle bundleForClass:ALChatViewController.class]];
+        
+        ALChatViewController * chatView = (ALChatViewController *) [storyboard instantiateViewControllerWithIdentifier:@"ALChatViewController"];
+        
+        chatView.channelKey = groupID;
+        chatView.contactIds = userId;
+        chatView.conversationId = conversationId;
+        chatView.text = text;
+        chatView.individualLaunch = YES;
+        chatView.chatViewDelegate = self;
+        ALSLog(ALLoggerSeverityInfo, @"CALLED_VIA_NOTIFICATION");
+        
+        UINavigationController * conversationViewNavController = [self createNavigationControllerForVC:chatView];
+        conversationViewNavController.modalPresentationStyle = UIModalPresentationFullScreen;
+        conversationViewNavController.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+        [viewController presentViewController:conversationViewNavController animated:YES completion:nil];
+    }
+}
 
 -(void)launchIndividualChat:(NSString *)userId withGroupId:(NSNumber*)groupID
             withDisplayName:(NSString*)displayName
@@ -93,7 +125,8 @@
         chatView.displayName = displayName;
         chatView.chatViewDelegate = self;
         
-        UINavigationController *conversationViewNavController = [self createNavigationControllerForVC:chatView];;
+        UINavigationController *conversationViewNavController = [self createNavigationControllerForVC:chatView];
+        conversationViewNavController.modalPresentationStyle = UIModalPresentationFullScreen;
         conversationViewNavController.modalTransitionStyle = UIModalTransitionStyleCrossDissolve ;
         [viewController presentViewController:conversationViewNavController animated:YES completion:nil];
     }
@@ -123,7 +156,8 @@
        chatView.displayName = displayName;
        chatView.chatViewDelegate = self;
        
-       UINavigationController *conversationViewNavController = [self createNavigationControllerForVC:chatView];;
+       UINavigationController *conversationViewNavController = [self createNavigationControllerForVC:chatView];
+        conversationViewNavController.modalPresentationStyle = UIModalPresentationFullScreen;
        conversationViewNavController.modalTransitionStyle = UIModalTransitionStyleCrossDissolve ;
        [viewController presentViewController:conversationViewNavController animated:YES completion:nil];
        
@@ -135,8 +169,8 @@
 {
     
     UIStoryboard* storyboard = [UIStoryboard storyboardWithName:@"Applozic" bundle:[NSBundle bundleForClass:ALChatViewController.class]];
-    UIViewController *theTabBar = [storyboard instantiateViewControllerWithIdentifier:@"messageTabBar"];
-    
+    UITabBarController *theTabBar = [storyboard instantiateViewControllerWithIdentifier:@"messageTabBar"];
+
     //              To Lunch with different Animation...
     //theTabBar.modalTransitionStyle=UIModalTransitionStyleCrossDissolve ;
     
@@ -145,22 +179,18 @@
     UINavigationController * navBAR = (UINavigationController *)[[tabBAR viewControllers] objectAtIndex:0];
     ALMessagesViewController * msgVC = (ALMessagesViewController *)[[navBAR viewControllers] objectAtIndex:0];
     msgVC.messagesViewDelegate = self;
+    
+    [[theTabBar tabBar] setBarTintColor:[ALApplozicSettings getTabBarBackgroundColour]];
+    [theTabBar.view setTintColor:[ALApplozicSettings getTabBarSelectedItemColour]];
+    
+    if ([tabBAR.tabBar respondsToSelector:@selector(setUnselectedItemTintColor:)])
+    {
+        [tabBAR.tabBar setUnselectedItemTintColor:[ALApplozicSettings getTabBarUnSelectedItemColour]];
+    }
+
+    theTabBar.modalPresentationStyle = UIModalPresentationFullScreen;
     [viewController presentViewController:theTabBar animated:YES completion:nil];
     
-}
-
--(void)registerForNotification
-{
-//    [[UIApplication sharedApplication] registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:
-//                                                                         (UIUserNotificationTypeSound |
-//                                                                          UIUserNotificationTypeAlert |
-//                                                                          UIUserNotificationTypeBadge) categories:nil]];
-//    
-//    [[UIApplication sharedApplication] registerForRemoteNotifications];
-    
-    UIUserNotificationSettings * APNSetting = [UIUserNotificationSettings settingsForTypes:UIUserNotificationTypeAlert | UIUserNotificationTypeBadge | UIUserNotificationTypeSound categories:nil];
-    
-    [[UIApplication sharedApplication] registerUserNotificationSettings:APNSetting];
 }
 
 -(void)launchContactList:(UIViewController *)uiViewController
@@ -170,6 +200,7 @@
     ALNewContactsViewController *contcatVC = (ALNewContactsViewController *)[storyboard instantiateViewControllerWithIdentifier:@"ALNewContactsViewController"];
     contcatVC.directContactVCLaunch = YES;
     UINavigationController *conversationViewNavController = [[UINavigationController alloc] initWithRootViewController:contcatVC];
+    conversationViewNavController.modalPresentationStyle = UIModalPresentationFullScreen;
     [uiViewController presentViewController:conversationViewNavController animated:YES completion:nil];
 }
 
@@ -198,6 +229,7 @@
     contextChatView.individualLaunch = YES;
     
     UINavigationController *conversationViewNavController = [self createNavigationControllerForVC:contextChatView];
+    conversationViewNavController.modalPresentationStyle = UIModalPresentationFullScreen;
     conversationViewNavController.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
     [viewController presentViewController:conversationViewNavController animated:YES completion:nil];
 }
@@ -211,7 +243,7 @@
     chatListView.userIdToLaunch = userId;
     chatListView.channelKey = channelKey;
     chatListView.messagesViewDelegate = self;
-    
+    conversationViewNavController.modalPresentationStyle = UIModalPresentationFullScreen;
     [viewController presentViewController:conversationViewNavController animated:YES completion:nil];
     
 }
@@ -241,6 +273,7 @@
     if (![className isKindOfClass:[NSString class]]) className = @"UINavigationController";
     
     UINavigationController * navC = [(UINavigationController *)[NSClassFromString(className) alloc] initWithRootViewController:chatListView];
+    navC.modalPresentationStyle = UIModalPresentationFullScreen;
     [viewController presentViewController:navC animated:YES completion:nil];
     
 }
@@ -264,6 +297,7 @@
         
         msgVC.parentGroupKey = parentKey;
         [msgVC intializeSubgroupMessages];
+        theTabBar.modalPresentationStyle = UIModalPresentationFullScreen;
         [viewController presentViewController:theTabBar animated:YES completion:nil];
     }];
 }
@@ -293,7 +327,11 @@
     ALNewContactsViewController *contactVC = (ALNewContactsViewController *)[storyboard instantiateViewControllerWithIdentifier:@"ALNewContactsViewController"];
     contactVC.directContactVCLaunch = YES;
     contactVC.alMessage = alMessage;
-    UINavigationController *conversationViewNavController = [[UINavigationController alloc] initWithRootViewController:contactVC];
+    contactVC.forGroup = [NSNumber numberWithInt:REGULAR_CONTACTS];
+
+    UINavigationController * conversationViewNavController = [self createNavigationControllerForVC:contactVC];
+    conversationViewNavController.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+    conversationViewNavController.modalPresentationStyle = UIModalPresentationFullScreen;
     [viewController presentViewController:conversationViewNavController animated:YES completion:nil];
 }
 

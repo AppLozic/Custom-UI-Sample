@@ -40,6 +40,7 @@
 @dynamic metadata;
 @dynamic msgHidden;
 @dynamic replyMessageType;
+@dynamic source;
 
 
 @end

@@ -11,8 +11,8 @@
 #import "NSString+Encode.h"
 
 
-#define DEFAULT_PAGE_SIZE @"50";
-#define DEFAULT_START_INDEX @"0"
+static NSString *const DEFAULT_PAGE_SIZE = @"50";
+static NSString *const DEFAULT_START_INDEX = @"0";
 
 @implementation MessageListRequest
 
@@ -34,7 +34,7 @@
         paramString = [NSString stringWithFormat:@"userId=%@&startIndex=%@&pageSize=%@",[self.userId urlEncodeUsingNSUTF8StringEncoding],self.startIndex,self.pageSize];
     }
     
-    if(self.endTimeStamp!=nil && !self.isFirstCall){
+    if(self.endTimeStamp!=nil){
         
         paramString = [paramString stringByAppendingFormat:@"&endTime=%@",self.endTimeStamp.stringValue];
     }

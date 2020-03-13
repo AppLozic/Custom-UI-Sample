@@ -171,15 +171,13 @@
     self.contactName = [[UILabel alloc]init];
     self.contactName.frame =  CGRectMake(REPLY_VIEW_PADDING,
                                          REPLY_VIEW_PADDING,
-                                         frame.size.width,
+                                         frame.size.width-self.attachmentImage.frame.size.width,
                                          20);
     [self.contactName setFont:[UIFont fontWithName:FONT_NAME size:15]];
 }
 
 -(void)pouplateValues:(ALMessage*)replyMessage
 {
-    NSURL * url;
-    
     replyMessage.message = [self getMessageText:replyMessage];
     
     if(replyMessage.isSentMessage)

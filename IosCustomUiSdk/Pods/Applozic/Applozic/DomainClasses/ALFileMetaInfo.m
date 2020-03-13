@@ -52,7 +52,7 @@
 -(NSString *) getFullThumbnailUrl:(NSString*)url
 {
     if (ALApplozicSettings.isStorageServiceEnabled) {
-        NSString *fullUrl = [[NSString alloc] initWithFormat:@"%@%@%@",KBASE_FILE_URL,IMAGE_THUMBNAIL_ENDPOIT,url];
+        NSString *fullUrl = [[NSString alloc] initWithFormat:@"%@%@%@",KBASE_FILE_URL,AL_IMAGE_THUMBNAIL_ENDPOIT,url];
         return fullUrl;
     }
     return url;

@@ -27,6 +27,10 @@
 
 -(void)createDetailChatViewController: (NSString *) contactIds;
 
+-(void)createDetailChatViewControllerWithMessage:(ALMessage *)message;
+
+-(void)createDetailChatViewControllerWithUserId:(NSString *)contactId withGroupId:(NSNumber *)groupId withConversationId:(NSNumber *)conversationId;
+
 -(void) syncCall:(ALMessage *) alMessage andMessageList:(NSMutableArray *)messageArray;
 
 -(void)pushNotificationhandler:(NSNotification *) notification;

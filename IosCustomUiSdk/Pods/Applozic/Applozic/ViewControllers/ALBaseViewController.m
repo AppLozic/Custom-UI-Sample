@@ -6,10 +6,9 @@
 //  Copyright (c) 2015 AppLogic. All rights reserved.
 //
 
-#define NAVIGATION_TEXT_SIZE 20
-#define LAST_SEEN_LABEL_SIZE 10
-#define TYPING_LABEL_SIZE 12.5
-
+static CGFloat NAVIGATION_TEXT_SIZE = 20;
+static CGFloat LAST_SEEN_LABEL_SIZE = 10;
+static CGFloat TYPING_LABEL_SIZE = 12.5;
 
 #import "ALBaseViewController.h"
 #import "ALUtilityClass.h"
@@ -19,10 +18,10 @@
 #import "ALChatLauncher.h"
 #import "ALMessagesViewController.h"
 #import "ALNavigationController.h"
+#import "ALApplicationInfo.h"
+#import "ALRegisterUserClientService.h"
 
 static CGFloat const sendTextViewCornerRadius = 15.0f;
-
-#define KEYBOARD_PADDING 85
 
 @interface ALBaseViewController ()
 
@@ -39,6 +38,8 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
     CGRect keyboardEndFrame;
     CGFloat navigationWidth;
     int paddingForTextMessageViewHeight;
+    ALApplicationInfo * applicationInfo;
+    ALRegisterUserClientService * registerUserClientService;
 }
 - (void)viewDidLoad
 {
@@ -85,6 +86,15 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
     }
     
     [self parseRestrictedWordFile];
+    applicationInfo = [[ALApplicationInfo alloc] init];
+    if ([applicationInfo isChatSuspended]) {
+        registerUserClientService = [[ALRegisterUserClientService alloc] init];
+        [registerUserClientService syncAccountStatusWithCompletion:^(ALRegistrationResponse *response, NSError *error) {
+            if(error || !response.isRegisteredSuccessfully) {
+                ALSLog(ALLoggerSeverityError, @"Failed to sync the account status");
+            }
+        }];
+    }
 }
 
 -(void)parseRestrictedWordFile
@@ -234,9 +244,7 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
 {
     [super viewWillAppear:animated];
     [self registerForKeyboardNotifications];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateSubViews) name:@"APP_ENTER_IN_FOREGROUND" object:nil];
-    
+
     [self.navigationController.navigationBar setTitleTextAttributes: @{
                                                                        NSForegroundColorAttributeName:[UIColor whiteColor],
                                                                        NSFontAttributeName:[UIFont fontWithName:[ALApplozicSettings getFontFace]
@@ -270,52 +278,17 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
 -(void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
-    [self updateSubViews];
-    
     /*  CHECK PRICING PACKAGE */
-    [self checkPricingPackage];
+    [self checkPricingPackageAndShowMessage];
 }
 
--(void)checkPricingPackage
+-(void)checkPricingPackageAndShowMessage
 {
-    BOOL debugflag = [ALUtilityClass isThisDebugBuild];
-    BOOL pricingFlag = ([ALUserDefaultsHandler getUserPricingPackage] == BETA);
-   
-    if(debugflag)
-    {
-        return;
-    }
-    if([ALUserDefaultsHandler getUserPricingPackage] == CLOSED)
-    {
-        [self back:self];
+    if([applicationInfo isChatSuspended]) {
         [ALUtilityClass showAlertMessage:@"Please Contact Applozic to activate chat in your app" andTitle:@"ALERT"];
-        return;
     }
-    if(!debugflag && pricingFlag)
-    {
-        UIToolbar * accessoryView = [[UIToolbar alloc] init];
-        [accessoryView setBackgroundColor:[UIColor lightGrayColor]];
-        [accessoryView sizeToFit];
-        
-        NSString *titleText = @"  Please Contact Applozic to activate chat in your app";
-        UILabel *customLabel = [[UILabel alloc] initWithFrame:accessoryView.frame];
-        [customLabel setFont:[UIFont fontWithName:@"Helvetica" size:14]];
-        [customLabel setText:titleText];
-        [customLabel setTextColor:[UIColor blueColor]];
-        
-        UIBarButtonItem * barButton = [[UIBarButtonItem alloc] initWithCustomView:customLabel];
-        [accessoryView setItems:[NSArray arrayWithObjects:barButton, nil] animated:YES];
-        [accessoryView setUserInteractionEnabled:NO];
-        [self.sendMessageTextView setInputAccessoryView:accessoryView];
-    }
+    
 }
-
--(void)updateSubViews
-{
-//    CGFloat typingLabelY = self.view.frame.size.height - typingIndicatorHeight - self.typingMessageView.frame.size.height + paddingForTextMessageViewHeight;
-//    [self.typingLabel setFrame:CGRectMake(0, typingLabelY, self.view.frame.size.width, typingIndicatorHeight)];
-}
-
 
 -(void)sendButtonUI
 {
@@ -333,9 +306,6 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
 
 -(void)viewWillDisappear:(BOOL)animated
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"APP_ENTER_IN_FOREGROUND" object:nil];
-    //self.navigationController.navigationBar.barTintColor = self.navColor;
-    
     [self removeRegisteredKeyboardNotifications];
 }
 
@@ -367,12 +337,8 @@ static CGFloat const sendTextViewCornerRadius = 15.0f;
 {
     NSString * theAnimationDuration = [self handleKeyboardNotification:notification];
 
-    if (@available(iOS 11.0, *)) {
-        self.checkBottomConstraint.constant = self.view.frame.size.height - keyboardEndFrame.origin.y + navigationWidth - self.view.safeAreaInsets.bottom;
-    } else {
-        // Fallback on earlier versions
-        self.checkBottomConstraint.constant = self.view.frame.size.height - keyboardEndFrame.origin.y + navigationWidth;
-    }
+    self.checkBottomConstraint.constant = -1 * keyboardEndFrame.size.height +
+    self.bottomLayoutGuide.length;
 
     [UIView animateWithDuration:theAnimationDuration.doubleValue animations:^{
         [self.view layoutIfNeeded];

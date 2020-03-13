@@ -21,6 +21,7 @@
     NSMutableArray *deliveredList;
 }
 
+@property (strong, nonatomic)  NSMutableDictionary *colourDictionary;
 -(void)cellAtIndexPath:(ALMessageInfo *)msgInfo inSection:(NSInteger)section;
 -(UIView *)customHeaderView:(NSInteger)section withTitle:(NSString *)title andName:(NSString *)name;
 
@@ -36,6 +37,7 @@
     self.alTableView.dataSource = self;
     [self.view bringSubviewToFront:self.activityIndicator];
     [self.activityIndicator startAnimating];
+    self.colourDictionary = [ALApplozicSettings getUserIconFirstNameColorCodes];
 }
 
 - (void)didReceiveMemoryWarning
@@ -137,12 +139,12 @@
         ALMessageInfo *msgInfo;
         if(indexPath.section == 1)
         {
-            msgInfo = readList[indexPath.row];
+            msgInfo = self->readList[indexPath.row];
             [self cellAtIndexPath:msgInfo inSection:indexPath.section];
         }
         else if(indexPath.section == 2)
         {
-            msgInfo = deliveredList[indexPath.row];
+            msgInfo = self->deliveredList[indexPath.row];
             [self cellAtIndexPath:msgInfo inSection:indexPath.section];
         }
     });
@@ -182,18 +184,18 @@
         
         if(!theError)
         {
-            arrayList = [NSMutableArray arrayWithArray:msgInfo.msgInfoList];
+            self->arrayList = [NSMutableArray arrayWithArray:msgInfo.msgInfoList];
             
-            for (ALMessageInfo *info in arrayList)
+            for (ALMessageInfo *info in self->arrayList)
             {
                 if(info.messageStatus == (short)READ)
                 {
-                    [readList addObject:info];
+                    [self->readList addObject:info];
                 }
                 
                 if(info.messageStatus == (short)DELIVERED)
                 {
-                    [deliveredList addObject:info];
+                    [self->deliveredList addObject:info];
                 }
                 
             }
@@ -260,7 +262,7 @@
     if(!alContact.contactImageUrl)
     {
         [self.firstAlphabet setHidden:NO];
-        [self.userImage setBackgroundColor:[ALColorUtility getColorForAlphabet:[alContact getDisplayName]]];
+        [self.userImage setBackgroundColor:[ALColorUtility getColorForAlphabet:[alContact getDisplayName] colorCodes:self.colourDictionary]];
         [self.firstAlphabet setText:[ALColorUtility getAlphabetForProfileImage:[alContact getDisplayName]]];
     }
     
@@ -412,20 +414,7 @@
             imageView.layer.cornerRadius = imageView.frame.size.width/2;
             
             [imageView setImage: [ALUtilityClass getImageFromFramworkBundle:@"ic_contact_picture_holo_light.png"]];
-            if(IS_OS_EARLIER_THAN_10)
-            {
-                if(self.VCFObject.retrievedImage)
-                {
-                    [imageView setImage:self.VCFObject.retrievedImage];
-                }
-                [textView setText:[NSString stringWithFormat:@"%@\n\n%@",self.VCFObject.fullName,self.VCFObject.phoneNumber]];
-                if(self.VCFObject.emailID)
-                {
-                    [textView setText:[NSString stringWithFormat:@"%@\n\n%@\n\n%@",self.VCFObject.fullName,self.VCFObject.phoneNumber,self.VCFObject.emailID]];
-                }
-            }
-            else
-            {
+    
                 if(self.VCardClass.contactImage)
                 {
                     [imageView setImage:self.VCardClass.contactImage];
@@ -436,7 +425,7 @@
                     [textView setText:[NSString stringWithFormat:@"%@\n\n%@\n\n%@",self.VCardClass.fullName, self.VCardClass.userPHONE_NO,
                                        self.VCardClass.userEMAIL_ID]];
                 }
-            }
+        
             textView.frame = CGRectMake(imageView.frame.origin.x + imageView.frame.size.width + 10,
                                         bubbleView.frame.origin.y + 5,
                                         bubbleView.frame.size.width - imageView.frame.size.width - 10,

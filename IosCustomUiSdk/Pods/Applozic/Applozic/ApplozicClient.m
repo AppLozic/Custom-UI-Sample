@@ -7,10 +7,12 @@
 //
 
 #import "ApplozicClient.h"
+#import "ALAttachmentService.h"
 
 @implementation ApplozicClient
 {
     ALMQTTConversationService *alMQTTConversationService;
+    ALAttachmentService *alAttachmentService;
     ALPushNotificationService *alPushNotificationService;
 }
 
@@ -22,7 +24,7 @@ NSString * const ApplozicClientDomain = @"ApplozicClient";
  @param applicationKey pass applicationKey you will get applicationKey from applozic.com
  @return return will be Class object
  */
--(instancetype)initWithApplicationKey:(NSString *)applicationKey;
+-(instancetype)initWithApplicationKey:(NSString *)applicationKey
 {
     self = [super init];
     if (self)
@@ -42,13 +44,14 @@ NSString * const ApplozicClientDomain = @"ApplozicClient";
  @return self
 
  */
--(instancetype)initWithApplicationKey:(NSString *)applicationKey withDelegate:(id<ApplozicUpdatesDelegate>) delegate;
+-(instancetype)initWithApplicationKey:(NSString *)applicationKey withDelegate:(id<ApplozicUpdatesDelegate>) delegate
 {
     self = [super init];
     if (self)
     {
         [ALUserDefaultsHandler setApplicationKey:applicationKey];
         alPushNotificationService = [[ALPushNotificationService alloc] init];
+        self.delegate = delegate;
         alPushNotificationService.realTimeUpdate = delegate;
         alMQTTConversationService = [ALMQTTConversationService sharedInstance];
         alMQTTConversationService.realTimeUpdate = delegate;
@@ -58,10 +61,16 @@ NSString * const ApplozicClientDomain = @"ApplozicClient";
 }
 
 -(void)setUpServices {
+
+    //TO-DO move this call later to a differnt method
+    [ALApplozicSettings setupSuiteAndMigrate];
+
     _messageService = [ALMessageService sharedInstance];
+    _messageService.delegate = self.delegate;
     _messageDbService = [ALMessageDBService new];
     _userService = [ALUserService sharedInstance];
     _channelService = [ALChannelService sharedInstance];
+    alAttachmentService = [ALAttachmentService sharedInstance];
 }
 
 //==============================================================================================================================================
@@ -238,8 +247,7 @@ NSString * const ApplozicClientDomain = @"ApplozicClient";
             }
             else
             {
-                ALUserService *userService = [[ALUserService alloc] init];
-                [userService processResettingUnreadCount];
+                [self->_userService processResettingUnreadCount];
                 completion(conversationResponse,nil);
             }
         }];
@@ -265,8 +273,7 @@ NSString * const ApplozicClientDomain = @"ApplozicClient";
             }
             else
             {
-                ALUserService *userService = [[ALUserService alloc] init];
-                [userService processResettingUnreadCount];
+                [self->_userService processResettingUnreadCount];
                 completion(conversationResponse,nil);
             }
         }];
@@ -280,7 +287,7 @@ NSString * const ApplozicClientDomain = @"ApplozicClient";
 /**
  This method is used for sending a text messages to group or one to one chat
 
- @param message it accept ALMessage object
+ @param alMessage it accept ALMessage object
  @param completion it has resonse where the messagekey is updated and it as createdAtTime of message which is created in our server else it as NSError
  */
 
@@ -301,6 +308,9 @@ NSString * const ApplozicClientDomain = @"ApplozicClient";
             completion(nil,error);
             return;
         }
+        if(self.delegate){
+            [self.delegate onMessageSent:alMessage];
+        }
         completion(alMessage,error);
     }];
 
@@ -317,207 +327,54 @@ NSString * const ApplozicClientDomain = @"ApplozicClient";
  */
 
 -(void)sendMessageWithAttachment:(ALMessage*) attachmentMessage{
-
+    
     if(!attachmentMessage || !attachmentMessage.imageFilePath){
-        return;
+                return;
     }
-
-    CFStringRef pathExtension = (__bridge_retained CFStringRef)[attachmentMessage.imageFilePath pathExtension];
-    CFStringRef type = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension, NULL);
-    CFRelease(pathExtension);
-    NSString *mimeType = (__bridge_transfer NSString *)UTTypeCopyPreferredTagWithClass(type, kUTTagClassMIMEType);
-
-    attachmentMessage.fileMeta.contentType = mimeType;
-    if( attachmentMessage.contentType == ALMESSAGE_CONTENT_VCARD){
-        attachmentMessage.fileMeta.contentType = @"text/x-vcard";
-    }
-    NSData *imageSize = [NSData dataWithContentsOfFile:attachmentMessage.imageFilePath];
-    attachmentMessage.fileMeta.size = [NSString stringWithFormat:@"%lu",(unsigned long)imageSize.length];
-
-    //DB Addition
-    ALDBHandler * theDBHandler = [ALDBHandler sharedInstance];
-    ALMessageDBService* messageDBService = [[ALMessageDBService alloc] init];
-    DB_Message * theMessageEntity = [messageDBService createMessageEntityForDBInsertionWithMessage:attachmentMessage];;
-    [theDBHandler.managedObjectContext save:nil];
-    attachmentMessage.msgDBObjectId = [theMessageEntity objectID];
-    theMessageEntity.inProgress = [NSNumber numberWithBool:YES];
-    theMessageEntity.isUploadFailed = [NSNumber numberWithBool:NO];
-    [[ALDBHandler sharedInstance].managedObjectContext save:nil];
-
-    NSDictionary * userInfo = [attachmentMessage dictionary];
-
-    ALMessageClientService * clientService  = [[ALMessageClientService alloc]init];
-    [clientService sendPhotoForUserInfo:userInfo withCompletion:^(NSString *responseUrl, NSError *error) {
-
-        if (error)
-        {
-
-            [self.attachmentProgressDelegate onUploadFailed:attachmentMessage];
-            return;
-        }
-
-        [ALMessageService proessUploadImageForMessage:attachmentMessage databaseObj:theMessageEntity.fileMetaInfo uploadURL:responseUrl  withdelegate:self];
-
-    }];
-
+    [alAttachmentService sendMessageWithAttachment:attachmentMessage withDelegate:self.delegate withAttachmentDelegate:self.attachmentProgressDelegate];
 }
-
-
--(ALFileMetaInfo *)getFileMetaInfo
-{
-    ALFileMetaInfo *info = [ALFileMetaInfo new];
-
-    info.blobKey = nil;
-    info.contentType = @"";
-    info.createdAtTime = nil;
-    info.key = nil;
-    info.name = @"";
-    info.size = @"";
-    info.userKey = @"";
-    info.thumbnailUrl = @"";
-    info.progressValue = 0;
-
-    return info;
-}
-
 
 //==============================================================================================================================================
 #pragma mark - Download  Attachment message method
 //==============================================================================================================================================
 
 /**
- This method is fr downloading an Attachment in chat
-
+ downloadMessageAttachment  method is for downloading an Attachment in chat
  @param alMessage pass ALMessage object which you want to download the attachment from  server
  */
 
--(void) downloadMessageAttachment:(ALMessage*)alMessage{
-
-    [ALMessageService processImageDownloadforMessage:alMessage withdelegate:self];
-
-}
-
--(void)connectionDidFinishLoading:(ALConnection *)connection{
-
-    [[[ALConnectionQueueHandler sharedConnectionQueueHandler] getCurrentConnectionQueue] removeObject:connection];
-    ALMessageDBService * dbService = [[ALMessageDBService alloc] init];
-    if ([connection.connectionType isEqualToString:@"Image Posting"])
-    {
-        DB_Message * dbMessage = (DB_Message*)[dbService getMessageByKey:@"key" value:connection.keystring];
-        ALMessage * message = [dbService createMessageEntity:dbMessage];
-        NSError * theJsonError = nil;
-        NSDictionary *theJson = [NSJSONSerialization JSONObjectWithData:connection.mData options:NSJSONReadingMutableLeaves error:&theJsonError];
-
-        if(ALApplozicSettings.isS3StorageServiceEnabled){
-            [message.fileMeta populate:theJson];
-        }else{
-            NSDictionary *fileInfo = [theJson objectForKey:@"fileMeta"];
-            [message.fileMeta populate:fileInfo];
-        }
-        ALMessage * almessage =  [ALMessageService processFileUploadSucess:message];
-        [_messageService sendMessages:almessage withCompletion:^(NSString *message, NSError *error) {
-
-            if(error)
-            {
-                NSLog(@"REACH_SEND_ERROR : %@",error);
-                if(self.attachmentProgressDelegate){
-                    [self.attachmentProgressDelegate onUploadFailed:almessage];
-                }
-                return;
-            }else{
-                if(self.attachmentProgressDelegate){
-                    [self.attachmentProgressDelegate onUploadCompleted:almessage];
-                }
-            }
-        }];
-
-    } else {
-
-        //This is download Sucessfull...
-        DB_Message * messageEntity = (DB_Message*)[dbService getMessageByKey:@"key" value:connection.keystring];
-
-        NSString * docPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-        NSArray *componentsArray = [messageEntity.fileMetaInfo.name componentsSeparatedByString:@"."];
-        NSString *fileExtension = [componentsArray lastObject];
-        NSString * filePath = [docPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_local.%@",connection.keystring,fileExtension]];
-        [connection.mData writeToFile:filePath atomically:YES];
-
-        // UPDATE DB
-        messageEntity.inProgress = [NSNumber numberWithBool:NO];
-        messageEntity.isUploadFailed=[NSNumber numberWithBool:NO];
-        messageEntity.filePath = [NSString stringWithFormat:@"%@_local.%@",connection.keystring,fileExtension];
-        [[ALDBHandler sharedInstance].managedObjectContext save:nil];
-        ALMessage * almessage = [[ALMessageDBService new ] createMessageEntity:messageEntity];
-        if(self.attachmentProgressDelegate){
-            [self.attachmentProgressDelegate onDownloadCompleted:almessage];
-        }
-    }
-
-}
-
--(void)connection:(ALConnection *)connection didReceiveData:(NSData *)data{
-
-    [connection.mData appendData:data];
-
-    if ([connection.connectionType isEqualToString:@"Image Posting"])
-    {
-        NSLog(@" file posting done");
+-(void)downloadMessageAttachment:(ALMessage*)alMessage{
+    if(!alMessage){
         return;
     }
-    if(self.attachmentProgressDelegate){
-        [self.attachmentProgressDelegate onUpdateBytesDownloaded:connection.mData.length];
-    }
-
+    [alAttachmentService downloadMessageAttachment:alMessage withDelegate:self.attachmentProgressDelegate];
 }
-
--(void)connection:(ALConnection *)connection didSendBodyData:(NSInteger)bytesWritten
-totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
-{
-    //upload percentage
-    NSLog(@"didSendBodyData..upload is in process...");
-    if(self.attachmentProgressDelegate){
-        [self.attachmentProgressDelegate onUpdateBytesUploaded:totalBytesWritten];
-    }
-}
-
-
 
 //==============================================================================================================================================
 #pragma mark - Channel/Group methods
 //==============================================================================================================================================
 
-
 /**
- This method is for creating a group like public group,open group group,private group
-
- @param channelName Pass group name
- @param clientChannelKey if you your own client channelKey then you can pass it while creating a group/channel
- @param memberUserIdArray Pass members userId whom you want to be in group while creating
- @param imageLink image url link for group image
- @param type its type of group
+ createChannelWithChannelInfo  This method is for creating a group like public group,open group group,private group
 
  PRIVATE = 1,
  PUBLIC = 2,
  BROADCAST = 5,
  OPEN = 6,
  GROUP_OF_TWO = 7
-
- @param metaData meta data can be extra information you want to pass in group/channel and use it later when its required
- @param adminUserId You can pass admin userId whom you want to be admin of the group/channel during a group/channel create
- @param groupRoleUsers
- @param completion alChannel it will be having complete  deatils about group else NSError
+ 
+ @param channelInfo pass information about group deatils
+ @param completion  it will be having complete  deatils about channel and status, if its error or success else NSError
  */
 
--(void) creataChannelWithName:(NSString *)channelName orClientChannelKey:(NSString *)clientChannelKey
-         andMembersUserIdList:(NSMutableArray *)memberUserIdArray andImageLink:(NSString *)imageLink channelType:(short)type
-                  andMetaData:(NSMutableDictionary *)metaData adminUser:(NSString *)adminUserId withGroupUsers : (NSMutableArray*) groupRoleUsers withCompletion:(void(^)(ALChannel *alChannel, NSError *error))completion{
+-(void)createChannelWithChannelInfo:(ALChannelInfo*)channelInfo withCompletion:(void(^)(ALChannelCreateResponse *response, NSError *error))completion{
 
     ALChannelService *channelService = [[ALChannelService alloc] init];
-
-    [channelService createChannel:channelName orClientChannelKey:clientChannelKey andMembersList:memberUserIdArray andImageLink:imageLink channelType:type andMetaData:metaData adminUser:adminUserId withGroupUsers:groupRoleUsers withCompletion:^(ALChannel *alChannel, NSError *error) {
-        completion(alChannel,error);
+    [channelService createChannelWithChannelInfo:channelInfo withCompletion:^(ALChannelCreateResponse *response, NSError *error) {
+        completion(response,error);
     }];
 }
+
 
 /**
  This method is used for removing a member from group
@@ -624,8 +481,7 @@ totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInte
  */
 -(void)blockUserWithUserId:(NSString *)userId withCompletion:(void(^)(NSError *error, BOOL userBlock))completion{
 
-    ALUserService *userService = [ALUserService new];
-    [userService blockUser:userId withCompletionHandler:^(NSError *error, BOOL userBlock) {
+    [_userService blockUser:userId withCompletionHandler:^(NSError *error, BOOL userBlock) {
         completion(error,userBlock);
     }];
 }
@@ -639,8 +495,7 @@ totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInte
 
 -(void)unBlockUserWithUserId:(NSString *)userId withCompletion:(void(^)(NSError *error, BOOL userUnblock))completion{
 
-    ALUserService *userService = [ALUserService new];
-    [userService unblockUser:userId withCompletionHandler:^(NSError *error, BOOL userUnblock) {
+    [_userService unblockUser:userId withCompletionHandler:^(NSError *error, BOOL userUnblock) {
         completion(error,userUnblock);
     }];
 }

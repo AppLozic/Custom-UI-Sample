@@ -14,56 +14,39 @@
 #import "ALMessageClientService.h"
 
 // Constants
-#define MT_INBOX_CONSTANT "4"
-#define MT_OUTBOX_CONSTANT "5"
-#define DATE_LABEL_SIZE 12
+static CGFloat const DATE_LABEL_SIZE = 12;
+static CGFloat const DOWNLOAD_RETRY_WIDTH = 60;
+static CGFloat const DOWNLOAD_RETRY_HEIGHT = 60;
 
+static CGFloat const DATE_HEIGHT = 20;
+static CGFloat const DATE_WIDTH = 80;
+static CGFloat const DATE_PADDING_X = 20;
 
-#define DOWNLOAD_RETRY_PADDING_X 45
-#define DOWNLOAD_RETRY_PADDING_Y 20
-#define DOWNLOAD_RETRY_WIDTH 60
-#define DOWNLOAD_RETRY_HEIGHT 60
+static CGFloat const MSG_STATUS_WIDTH = 20;
+static CGFloat const MSG_STATUS_HEIGHT = 20;
+static CGFloat const BUBBLE_PADDING_X = 13;
+static CGFloat const BUBBLE_PADDING_WIDTH = 50;
+static CGFloat const BUBBLE_PADDING_HEIGHT = 70;
 
-#define MAX_WIDTH 150
-#define MAX_WIDTH2 130
+static CGFloat const CHANNEL_PADDING_X = 5;
+static CGFloat const CHANNEL_PADDING_Y = 2;
+static CGFloat const CHANNEL_PADDING_WIDTH = 5;
+static CGFloat const CHANNEL_HEIGHT = 20;
 
+static CGFloat const BUTTON_PADDING_X = 5;
+static CGFloat const BUTTON_PADDING_Y = 5;
+static CGFloat const BUTTON_PADDING_WIDTH = 60;
+static CGFloat const BUTTON_PADDING_HEIGHT = 60;
 
-#define IMAGE_VIEW_PADDING_X 5
-#define IMAGE_VIEW_PADDING_Y 5
-#define IMAGE_VIEW_PADDING_WIDTH 10
-#define IMAGE_VIEW_PADDING_HEIGHT 10
+static CGFloat const PROGRESS_HEIGHT = 30;
+static CGFloat const MEDIATRACKLENGTH_HEIGHT = 20;
+static CGFloat const MEDIATRACKLENGTH_WIDTH = 80;
+static CGFloat const AL_MEDIA_TRACK_PROGRESS_PADDING_Y = 30;
 
-#define DATE_HEIGHT 20
-#define DATE_WIDTH 80
-#define DATE_PADDING_X 20
-
-#define MSG_STATUS_WIDTH 20
-#define MSG_STATUS_HEIGHT 20
-
-#define IMAGE_VIEW_WITHTEXT_PADDING_Y 10
-
-#define BUBBLE_PADDING_X 13
-#define BUBBLE_PADDING_WIDTH 50
-#define BUBBLE_PADDING_HEIGHT 70
-
-
-#define CHANNEL_PADDING_X 5
-#define CHANNEL_PADDING_Y 2
-#define CHANNEL_PADDING_WIDTH 5
-#define CHANNEL_HEIGHT 20
-
-#define BUTTON_PADDING_X 5
-#define BUTTON_PADDING_Y 5
-#define BUTTON_PADDING_WIDTH 60
-#define BUTTON_PADDING_HEIGHT 60
-
-#define MEDIA_NAME_HEIGHT 40
-
-#define PROGRESS_HEIGHT 30
-#define MEDIATRACKLENGTH_HEIGHT 20
-#define MEDIATRACKLENGTH_WIDTH 80
-#define AL_MEDIA_TRACK_PROGRESS_PADDING_Y 30
-
+static CGFloat const USER_PROFILE_PADDING_X = 5;
+static CGFloat const USER_PROFILE_PADDING_X_OUTBOX = 50;
+static CGFloat const USER_PROFILE_WIDTH = 45;
+static CGFloat const USER_PROFILE_HEIGHT = 45;
 
 @interface ALAudioCell()
 
@@ -157,7 +140,7 @@
     [self.mUserProfileImageView setUserInteractionEnabled:YES];
     [self.mUserProfileImageView addGestureRecognizer:tapForOpenChat];
     
-    if([alMessage.type isEqualToString:@MT_INBOX_CONSTANT])
+    if([alMessage isReceivedMessage])
     {
         self.mBubleImageView.backgroundColor = [ALApplozicSettings getReceiveMsgColor];
         
@@ -184,7 +167,7 @@
         {
             [self.mUserProfileImageView sd_setImageWithURL:[NSURL URLWithString:@""] placeholderImage:nil options:SDWebImageRefreshCached];
             [self.mNameLabel setHidden:NO];
-            self.mUserProfileImageView.backgroundColor = [ALColorUtility getColorForAlphabet:alMessage.to];
+            self.mUserProfileImageView.backgroundColor = [ALColorUtility getColorForAlphabet:alMessage.to colorCodes:self.alphabetiColorCodesDictionary];
         }
          CGFloat requiredHeight  = BUBBLE_PADDING_HEIGHT;
         CGFloat paypauseBUttonY = self.mBubleImageView.frame.origin.y + BUTTON_PADDING_Y ;
@@ -198,7 +181,7 @@
         {
          
             [self.mChannelMemberName setHidden:NO];
-            [self.mChannelMemberName setTextColor: [ALColorUtility getColorForAlphabet:receiverName]];
+            [self.mChannelMemberName setTextColor: [ALColorUtility getColorForAlphabet:receiverName colorCodes:self.alphabetiColorCodesDictionary]];
             [self.mChannelMemberName setText:receiverName];
    
             self.mChannelMemberName.frame = CGRectMake(self.mBubleImageView.frame.origin.x + CHANNEL_PADDING_X,
@@ -247,6 +230,7 @@
         
         if (alMessage.imageFilePath == nil)
         {
+            self.mDowloadRetryButton.alpha = 1;
             [self.mDowloadRetryButton setHidden:NO];
             [self.mDowloadRetryButton setImage:[ALUtilityClass getImageFromFramworkBundle:@"DownloadiOS.png"] forState:UIControlStateNormal];
         }
@@ -354,9 +338,20 @@
     
     if(alMessage.imageFilePath != nil && alMessage.fileMeta.blobKey)
     {
-        NSString * docDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-        NSString * filePath = [docDir stringByAppendingPathComponent:alMessage.imageFilePath];
-        NSURL * soundFileURL = [NSURL fileURLWithPath:filePath];
+        NSURL * soundFileURL;
+        NSURL *documentDirectory =  [ALUtilityClass getApplicationDirectoryWithFilePath:alMessage.imageFilePath];
+        NSString *filePath = documentDirectory.path;
+
+        if([[NSFileManager defaultManager] fileExistsAtPath:filePath]){
+            soundFileURL = [NSURL fileURLWithPath:documentDirectory.path];
+        }else{
+            NSURL *appGroupDirectory =  [ALUtilityClass getAppsGroupDirectoryWithFilePath:alMessage.imageFilePath];
+
+            if(appGroupDirectory){
+                soundFileURL = [NSURL fileURLWithPath:appGroupDirectory.path];
+            }
+        }
+
         ALSLog(ALLoggerSeverityInfo, @"SOUND_URL :: %@",[soundFileURL path]);
         [self.playPauseStop setHidden:NO];
     }
@@ -371,7 +366,7 @@
     
     self.mDateLabel.text = theDate;
     
-    if ([alMessage.type isEqualToString:@MT_OUTBOX_CONSTANT]) {
+    if ([alMessage isSentMessage]  && ((self.channel && self.channel.type != OPEN) || self.contact)) {
         
         self.mMessageStatusImageView.hidden = NO;
         NSString * imageName;
@@ -407,25 +402,24 @@
 #pragma mark - Menu option tap Method -
 
 -(void) proccessTapForMenu:(id)tap{
-    
     [self processKeyBoardHideTap];
 
     UIMenuItem * messageForward = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"forwardOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Forward", @"") action:@selector(messageForward:)];
     UIMenuItem * messageReply = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"replyOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Reply", @"") action:@selector(messageReply:)];
-    
-    if ([self.mMessage.type isEqualToString:@MT_INBOX_CONSTANT]){
-        
-        [[UIMenuController sharedMenuController] setMenuItems: @[messageForward,messageReply]];
-        
-    }else if ([self.mMessage.type isEqualToString:@MT_OUTBOX_CONSTANT]){
 
-        
+    if ([self.mMessage.type isEqualToString:AL_IN_BOX]){
+
+        [[UIMenuController sharedMenuController] setMenuItems: @[messageForward,messageReply]];
+
+    }else if ([self.mMessage.type isEqualToString:AL_OUT_BOX]){
+
+
         UIMenuItem * msgInfo = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"infoOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Info", @"") action:@selector(msgInfo:)];
-        
+
         [[UIMenuController sharedMenuController] setMenuItems: @[msgInfo,messageReply,messageForward]];
     }
     [[UIMenuController sharedMenuController] update];
-    
+
 }
 
 
@@ -442,7 +436,7 @@
 
     }
         
-    if([self.mMessage.type isEqualToString:@MT_OUTBOX_CONSTANT] && self.mMessage.groupId){
+    if([self.mMessage isSentMessage] && self.mMessage.groupId){
         
         return (self.mMessage.isDownloadRequired? (action == @selector(delete:) || action == @selector(msgInfo:)):(action == @selector(delete:)|| action == @selector(msgInfo:)|| [self isForwardMenuEnabled:action] || [self isMessageReplyMenuEnabled:action] ));
     }

@@ -38,6 +38,7 @@ class ViewController: UIViewController {
 
         let conversationVC = ConversationListViewController();
         let nav = ALKBaseNavigationViewController(rootViewController: conversationVC)
+        nav.modalPresentationStyle = .fullScreen
         self.present(nav, animated: false, completion: nil)
     }
 }

@@ -3,7 +3,7 @@
 //  MQTTClient
 //
 //  Created by Christoph Krey on 05.01.16.
-//  Copyright © 2016 Christoph Krey. All rights reserved.
+//  Copyright © 2016-2017 Christoph Krey. All rights reserved.
 //
 
 #import "MQTTTransport.h"
@@ -12,28 +12,28 @@
 
 @implementation MQTTTransport
 @synthesize state;
-@synthesize runLoop;
-@synthesize runLoopMode;
+@synthesize queue;
+@synthesize streamSSLLevel;
 @synthesize delegate;
+@synthesize host;
+@synthesize port;
 
 - (instancetype)init {
     self = [super init];
     self.state = MQTTTransportCreated;
-    self.runLoop = [NSRunLoop currentRunLoop];
-    self.runLoopMode = NSRunLoopCommonModes;
     return self;
 }
 
 - (void)open {
-    ALDDLogError(@"MQTTTransport is abstract class");
+    DDLogError(@"MQTTTransport is abstract class");
 }
 
 - (void)close {
-    ALDDLogError(@"MQTTTransport is abstract class");
+    DDLogError(@"MQTTTransport is abstract class");
 }
 
 - (BOOL)send:(NSData *)data {
-    ALDDLogError(@"MQTTTransport is abstract class");
+    DDLogError(@"MQTTTransport is abstract class");
     return FALSE;
 }
 

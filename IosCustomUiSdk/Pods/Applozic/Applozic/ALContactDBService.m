@@ -10,6 +10,7 @@
 #import "ALDBHandler.h"
 #import "ALConstant.h"
 #import "DB_Message.h"
+#import "SearchResultCache.h"
 
 @implementation ALContactDBService
 
@@ -113,11 +114,9 @@
     for (ALContact *contact in contacts) {
         
         result = [self updateContact:contact];
-        
+
         if (!result) {
-            
-            ALSLog(ALLoggerSeverityInfo, @"Failure to update the contacts");
-            break;
+            ALSLog(ALLoggerSeverityInfo, @"Failure to update the contacts %@",contact.userId);
         }
     }
     
@@ -176,8 +175,12 @@
         if(contact.deletedAtTime){
             userContact.deletedAtTime = contact.deletedAtTime;
         }
+        
         userContact.roleType = contact.roleType;
         userContact.metadata = contact.metadata.description;
+        if(contact.notificationAfterTime && [contact.notificationAfterTime longValue]>0){
+            userContact.notificationAfterTime = contact.notificationAfterTime;
+        }
     }
     
     NSError *error = nil;
@@ -233,7 +236,7 @@
         result = [self addContact:contact];
 
         if (!result) {
-            break;
+            ALSLog(ALLoggerSeverityInfo, @"Failure to add/update the contacts %@",contact.userId);
         }
     }
 
@@ -275,6 +278,14 @@
 
 - (ALContact *) loadContactByKey:(NSString *) key value:(NSString*) value
 {
+    if(!value){
+        return nil;
+    }
+    ALContact *cachedContact = [[SearchResultCache shared] getContactWithId: value];
+    if (cachedContact != nil) {
+        return cachedContact;
+    }
+    
     DB_CONTACT *dbContact = [self getContactByKey:key value:value];
     ALContact *contact = [[ALContact alloc] init];
 
@@ -299,6 +310,7 @@
     contact.deletedAtTime = dbContact.deletedAtTime;
     contact.metadata = [contact getMetaDataDictionary:dbContact.metadata];
     contact.roleType = dbContact.roleType;
+    contact.notificationAfterTime = dbContact.notificationAfterTime;
     
     return contact;
 }
@@ -361,6 +373,27 @@
     }
 }
 
+
+-(NSMutableArray *)addMuteUserDetailsWithDelegate:(id<ApplozicUpdatesDelegate>)delegate withNSDictionary:(NSDictionary *)jsonNSDictionary
+{
+    NSMutableArray * userDetailArray = [NSMutableArray new];
+
+    for (NSDictionary * theDictionary in jsonNSDictionary)
+    {
+        ALUserDetail * userDetail = [[ALUserDetail alloc] initWithDictonary:theDictionary];
+        userDetail.unreadCount = 0;
+        [self updateUserDetail:userDetail];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"Update_user_mute_info" object:userDetail];
+        if(delegate){
+            [delegate onUserMuteStatus:userDetail];
+        }
+        [userDetailArray addObject:userDetail];
+    }
+    
+    return userDetailArray;
+
+}
+
 -(void) updateConnectedStatus: (NSString *) userId lastSeenAt:(NSNumber *) lastSeenAt  connected: (BOOL) connected
 {
     ALUserDetail *ob = [[ALUserDetail alloc] init];
@@ -408,7 +441,11 @@
         dbContact.deletedAtTime = userDetail.deletedAtTime;
         dbContact.metadata = userDetail.metadata.description;
         dbContact.roleType = userDetail.roleType;
-
+        
+        if(userDetail.notificationAfterTime && [userDetail.notificationAfterTime longValue]>0){
+            dbContact.notificationAfterTime = userDetail.notificationAfterTime;
+        }
+        
     }
     else
     {
@@ -425,6 +462,10 @@
         contact.deletedAtTime = userDetail.deletedAtTime;
         contact.roleType = userDetail.roleType;
         contact.metadata = userDetail.metadata;
+        
+        if(userDetail.notificationAfterTime && [userDetail.notificationAfterTime longValue]>0){
+            contact.notificationAfterTime = userDetail.notificationAfterTime;
+        }
         [self addContact:contact];
     }
     
@@ -657,7 +698,7 @@
         contact.deletedAtTime = dbContact.deletedAtTime;
         contact.roleType = dbContact.roleType;
         contact.metadata = [contact getMetaDataDictionary:dbContact.metadata];
-        
+        contact.notificationAfterTime =  dbContact.notificationAfterTime;
         [contactList addObject:contact];
     }
 
@@ -702,6 +743,9 @@
     originalContact.deletedAtTime = updatedContact.deletedAtTime;
     originalContact.metadata = updatedContact.metadata.description;
     originalContact.roleType = updatedContact.roleType;
+    if(updatedContact.notificationAfterTime && [updatedContact.notificationAfterTime longValue]>0){
+        originalContact.notificationAfterTime = updatedContact.notificationAfterTime;
+    }
     return originalContact;
 }
 
@@ -717,5 +761,36 @@
     }
     return result;
 }
+
+-(ALUserDetail *)updateMuteAfterTime:(NSNumber*)notificationAfterTime andUserId:(NSString*)userId
+{
+    ALDBHandler * dbHandler = [ALDBHandler sharedInstance];
+    
+    DB_CONTACT* dbContact = [self getContactByKey:@"userId" value:userId];
+    
+    if(dbContact){
+        dbContact.notificationAfterTime = notificationAfterTime;
+        [dbHandler.managedObjectContext save:nil];
+    }
+    
+    return [self getUserDetailFromDbContact:dbContact];
+}
+
+-(ALUserDetail *)getUserDetailFromDbContact:(DB_CONTACT *)dbContact{
+    
+    ALUserDetail *userDetail = [[ALUserDetail alloc] init];
+    userDetail.userId = dbContact.userId;
+    userDetail.contactNumber = dbContact.contactNumber;
+    userDetail.imageLink = dbContact.contactImageUrl;
+    userDetail.displayName = dbContact.displayName;
+    userDetail.unreadCount = dbContact.unreadCount;
+    userDetail.userStatus = dbContact.userStatus;
+    userDetail.connected = dbContact.connected;
+    userDetail.deletedAtTime = dbContact.deletedAtTime;
+    userDetail.roleType = dbContact.roleType;
+    userDetail.notificationAfterTime =  dbContact.notificationAfterTime;
+    return userDetail;
+}
+
 
 @end

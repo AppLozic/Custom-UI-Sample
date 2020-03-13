@@ -13,6 +13,7 @@
 #import "ALUserDetailListFeed.h"
 #import "AlApplicationInfoFeed.h"
 #import "ALAPIResponse.h"
+#import "ALMuteRequest.h"
 
 @interface ALUserClientService : NSObject
 
@@ -46,8 +47,16 @@
 
 +(void)readCallResettingUnreadCountWithCompletion:(void (^)(NSString *json, NSError *error))completion;
 
--(void)updateUserDisplayName:(NSString *)displayName andUserImageLink:(NSString *)imageLink userStatus:(NSString *)status
+-(void)updateUserDisplayName:(NSString *)displayName
+            andUserImageLink:(NSString *)imageLink
+                  userStatus:(NSString *)status
+                    metadata:(NSMutableDictionary *)metadata
               withCompletion:(void (^)(id theJson, NSError * error))completionHandler;
+
+-(void)updateUser:(NSString *)phoneNumber
+            email:(NSString *)email
+           ofUser: (NSString *)userId
+   withCompletion:(void(^)(id theJson, NSError *theError))completion;
 
 -(void)subProcessUserDetailServerCallPOST:(ALUserDetailListFeed *)ob withCompletion:(void(^)(NSMutableArray * userDetailArray, NSError * theError))completionMark;
 
@@ -57,5 +66,11 @@
 -(void)updatePassword:(NSString*)oldPassword withNewPassword :(NSString *) newPassword  withCompletion:(void (^)(ALAPIResponse *apiResponse, NSError *error))completion;
 
 -(void)getListOfUsersWithUserName:(NSString *)userName withCompletion:(void(^)(ALAPIResponse* response, NSError * error))completion;
+
+-(void)getMutedUserListWithCompletion:(void(^)(id theJson, NSError * error))completion;
+
+-(void) muteUser:(ALMuteRequest *)alMuteRequest withCompletion:(void(^)(ALAPIResponse * response, NSError * error))completion;
+
+-(void)reportUserWithMessageKey:(NSString *) messageKey  withCompletion:(void (^)(ALAPIResponse *apiResponse, NSError *error))completion;
 
 @end

@@ -13,62 +13,49 @@ import UserNotifications
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UNUserNotificationCenterDelegate {
 
-
-    var applozicClient = ApplozicClient()
+    public var applozicClient = ApplozicClient()
+    let pushAssist = ALPushAssist()
 
     public var userId: String?
     public var groupId : NSNumber = 0
-
     var window: UIWindow?
 
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-
 
         registerForNotification()
 
         applozicClient = ApplozicClient.init(applicationKey: "applozic-sample-app", with: self)
 
-
-        if (ALUserDefaultsHandler.isLoggedIn())
-        {
+        if (ALUserDefaultsHandler.isLoggedIn()) {
 
             let viewController =    ConversationListViewController()
             let nav = ALKBaseNavigationViewController(rootViewController: viewController)
-
             nav.modalTransitionStyle = .crossDissolve
-
+            nav.modalPresentationStyle = .fullScreen
             self.window?.makeKeyAndVisible();
-            self.window?.rootViewController!.present(nav, animated:false, completion: nil)
-
+            self.window?.rootViewController!.present(nav, animated:true, completion: nil)
         }
 
-        if (launchOptions != nil)
-        {
+        if (launchOptions != nil) {
             let dictionary = launchOptions?[UIApplicationLaunchOptionsKey.remoteNotification] as? NSDictionary
 
             if (dictionary != nil)
             {
 
-
                 let pushnotification = ALPushNotificationService()
 
-                if(pushnotification.isApplozicNotification(launchOptions)){
+                if (pushnotification.isApplozicNotification(launchOptions)) {
 
                     applozicClient.notificationArrived(to: application, with: launchOptions)
                     DispatchQueue.main.async {
                         self.openChatView(dic: dictionary as! [AnyHashable : Any])
                     }
 
-                }else{
+                } else {
                     //handle your notification
                 }
-
             }
         }
-
-
-
         // Override point for customization after application launch.
         return true
     }
@@ -106,25 +93,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
+        // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background
+
+    }
 
 
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
 
-        ALMessageService.getLatestMessage(forUser: ALUserDefaultsHandler.getDeviceKeyString()) { (array, error) in
-
-
-            if(error == nil){
-                NotificationCenter.default.post(name: Notification.Name(rawValue: "reloadTable"), object: nil)
-
-            }
+        ALMessageService.getLatestMessage(forUser: ALUserDefaultsHandler.getDeviceKeyString(), with: self) { (array, error) in
 
         }
 
         applozicClient.subscribeToConversation()
-    }
-
-    func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -132,6 +113,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
         ALDBHandler.sharedInstance().saveContext()
 
     }
+
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data)
     {
@@ -236,7 +218,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
                     json["groupId"] = 0
                 }else{
                     let groupId =  dic["groupId"] as? NSNumber
-                   json  = ["groupId":groupId]
+                    json  = ["groupId":groupId]
                 }
 
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "reloadData"), object: json)
@@ -326,71 +308,146 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
     func onMessageReceived(_ alMessage: ALMessage!) {
 
-        //    NotificationCenter.default.post(name: Notification.Name(rawValue: "New_Message_Notification"), object: alMessage)
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onMessageReceived(alMessage)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onMessageReceived(alMessage)
+        }
 
     }
 
     func onMessageSent(_ alMessage: ALMessage!) {
 
-        //   NotificationCenter.default.post(name: Notification.Name(rawValue: "New_Message_Notification"), object: alMessage)
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onMessageSent(alMessage)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onMessageSent(alMessage)
+        }
 
     }
 
     func onUserDetailsUpdate(_ userDetail: ALUserDetail!) {
 
-        //  NotificationCenter.default.post(name: Notification.Name(rawValue: "User_info_updated"), object: userDetail)
-
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onUserDetailsUpdate(userDetail)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onUserDetailsUpdate(userDetail)
+        }
     }
 
     func onMessageDelivered(_ message: ALMessage!) {
 
-        // NotificationCenter.default.post(name: Notification.Name(rawValue: "Message_Status_Update"), object: message)
-
-
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onMessageDelivered(message)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onMessageDelivered(message)
+        }
     }
 
     func onMessageDeleted(_ messageKey: String!) {
-        //  NotificationCenter.default.post(name: Notification.Name(rawValue: "Message_Delete_Update"), object: messageKey)
+
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onMessageDeleted(messageKey)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onMessageDeleted(messageKey)
+        }
 
     }
 
     func onMessageDeliveredAndRead(_ message: ALMessage!, withUserId userId: String!) {
 
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onMessageDeliveredAndRead(message, withUserId: userId)
+
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onMessageDeliveredAndRead(message, withUserId: userId)
+        }
     }
 
     func onConversationDelete(_ userId: String!, withGroupId groupId: NSNumber!) {
 
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onConversationDelete(userId, withGroupId: groupId)
 
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onConversationDelete(userId, withGroupId: groupId)
+        }
     }
 
     func conversationRead(byCurrentUser userId: String!, withGroupId groupId: NSNumber!) {
-        //  NotificationCenter.default.post(name: Notification.Name(rawValue: "Unread_Conversation_Read"), object: infoDict)
 
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.conversationRead(byCurrentUser: userId, withGroupId: groupId)
+
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.conversationRead(byCurrentUser: userId, withGroupId: groupId)
+        }
     }
 
     func onUpdateTypingStatus(_ userId: String!, status: Bool) {
-        //    NotificationCenter.default.post(name: Notification.Name(rawValue: "GenericRichListButtonSelected"), object: infoDict)
-
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onUpdateTypingStatus(userId, status: status)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onUpdateTypingStatus(userId, status: status)
+        }
     }
 
     func onUpdateLastSeen(atStatus alUserDetail: ALUserDetail!) {
-        //  NotificationCenter.default.post(name: Notification.Name(rawValue: "Online_Status_Update"), object: alUserDetail)
-
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onUpdateLastSeen(atStatus: alUserDetail)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onUpdateLastSeen(atStatus: alUserDetail)
+        }
     }
 
     func onUserBlockedOrUnBlocked(_ userId: String!, andBlockFlag flag: Bool) {
-        //    NotificationCenter.default.post(name: Notification.Name(rawValue: "GenericRichListButtonSelected"), object: infoDict)
-
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onUserBlockedOrUnBlocked(userId, andBlockFlag: flag)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onUserBlockedOrUnBlocked(userId, andBlockFlag: flag)
+        }
     }
 
     func onChannelUpdated(_ channel: ALChannel!) {
-        // NotificationCenter.default.post(name: Notification.Name(rawValue: "Channel_Info_Sync"), object: channel)
-
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onChannelUpdated(channel)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onChannelUpdated(channel)
+        }
     }
 
     func onAllMessagesRead(_ userId: String!) {
-        // NotificationCenter.default.post(name: Notification.Name(rawValue: "All_Messages_Read"), object: userId)
-
+        if (pushAssist.topViewController is ConversationListViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationListViewController
+            viewController?.onAllMessagesRead(userId)
+        } else if (pushAssist.topViewController is ConversationViewController) {
+            let viewController =  pushAssist.topViewController as? ConversationViewController
+            viewController?.onAllMessagesRead(userId)
+        }
     }
 
     func onMqttConnectionClosed() {
@@ -400,8 +457,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
     func onMqttConnected() {
 
+
     }
 
+    func onUserMuteStatus(_ userDetail: ALUserDetail!) {
+
+    }
 
     func openChatView(dic: [AnyHashable : Any] )  {
 
@@ -447,7 +508,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "reloadData"), object: json)
 
-            }else{
+            } else {
                 let viewController = ConversationViewController()
 
                 if(channelKey != 0) {
@@ -458,11 +519,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
                 alPushAssist.topViewController.navigationController?.pushViewController(viewController, animated: true)
             }
-
         }
     }
-
-
 
 }
 

@@ -7,6 +7,7 @@
 //
 
 #import "ALContact.h"
+#import "ALUserDefaultsHandler.h"
 
 @implementation ALContact
 
@@ -82,6 +83,17 @@
         return self.userId;
     }
     
+}
+
+-(BOOL)isNotificationMuted{
+    
+    long secsUtc1970 = [[NSNumber numberWithDouble:[[NSDate date]timeIntervalSince1970] ] longValue ]*1000L;
+    
+     return (_notificationAfterTime && [_notificationAfterTime longValue]> secsUtc1970);
+}
+
+- (BOOL)isChatDisabled {
+    return _metadata && [_metadata[AL_DISABLE_USER_CHAT] boolValue];
 }
 
 @end

@@ -125,9 +125,9 @@ __weak static UIViewController *_defaultViewController;
                                    image:(UIImage *)image
                                     type:(TSMessageNotificationType)type
                                 duration:(NSTimeInterval)duration
-                                callback:(void (^)())callback
+                                callback:(void (^)(void))callback
                              buttonTitle:(NSString *)buttonTitle
-                          buttonCallback:(void (^)())buttonCallback
+                          buttonCallback:(void (^)(void))buttonCallback
                               atPosition:(TSMessageNotificationPosition)messagePosition
                     canBeDismissedByUser:(BOOL)dismissingEnabled
 {
@@ -336,7 +336,7 @@ __weak static UIViewController *_defaultViewController;
     [self fadeOutNotification:currentView animationFinishedBlock:nil];
 }
 
-- (void)fadeOutNotification:(TSMessageView *)currentView animationFinishedBlock:(void (^)())animationFinished
+- (void)fadeOutNotification:(TSMessageView *)currentView animationFinishedBlock:(void (^)(void))animationFinished
 {
     currentView.messageIsFullyDisplayed = NO;
     [NSObject cancelPreviousPerformRequestsWithTarget:self
@@ -388,7 +388,7 @@ __weak static UIViewController *_defaultViewController;
     return [self dismissActiveNotificationWithCompletion:nil];
 }
 
-+ (BOOL)dismissActiveNotificationWithCompletion:(void (^)())completion
++ (BOOL)dismissActiveNotificationWithCompletion:(void (^)(void))completion
 {
     if ([[TSMessage sharedMessage].messages count] == 0) return NO;
     

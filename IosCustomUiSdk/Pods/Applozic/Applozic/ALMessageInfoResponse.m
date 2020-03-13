@@ -16,7 +16,7 @@
     
     self.msgInfoList = [NSMutableArray new];
     
-    if([super.status isEqualToString: RESPONSE_SUCCESS])
+    if([super.status isEqualToString: AL_RESPONSE_SUCCESS])
     {
         NSMutableArray *responseArray = [JSONString valueForKey:@"response"];
         

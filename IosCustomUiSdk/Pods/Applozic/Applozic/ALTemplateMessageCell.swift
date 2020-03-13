@@ -9,7 +9,7 @@ import UIKit
 
 @objc open class ALTemplateMessageCell: UICollectionViewCell {
 
-    open let textLabel: UILabel = {
+    public let textLabel: UILabel = {
         let label = UILabel(frame: CGRect.zero)
         label.textColor = UIColor.black
         label.backgroundColor = UIColor.white

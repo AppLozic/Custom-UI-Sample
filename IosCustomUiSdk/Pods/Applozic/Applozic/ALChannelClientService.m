@@ -6,36 +6,34 @@
 //  Copyright © 2015 applozic Inc. All rights reserved.
 //
 
-#define CHANNEL_INFO_URL @"/rest/ws/group/info"
-//#define CHANNEL_SYNC_URL @"/rest/ws/group/list"
-#define CHANNEL_SYNC_URL @"/rest/ws/group/v3/list"
-#define CREATE_CHANNEL_URL @"/rest/ws/group/create"
-#define DELETE_CHANNEL_URL @"/rest/ws/group/delete"
-#define LEFT_CHANNEL_URL @"/rest/ws/group/left"
-#define ADD_MEMBER_TO_CHANNEL_URL @"/rest/ws/group/add/member"
-#define REMOVE_MEMBER_FROM_CHANNEL_URL @"/rest/ws/group/remove/member"
-#define UPDATE_CHANNEL_URL @"/rest/ws/group/update"
-#define UPDATE_GROUP_USER @"/rest/ws/group/user/update"
-#define Add_USERS_TO_MANY_GROUPS @"/rest/ws/group/add/users"
-#define CHANNEL_INFO_ON_IDS @"/rest/ws/group/details"
-#define CHANNEL_FILTER_API @"/rest/ws/group/filter"
-#define CONTACT_FAVOURITE_LIST @"/rest/ws/group/favourite/list/get"
-
+static NSString *const CHANNEL_INFO_URL = @"/rest/ws/group/info";
+//static NSString *const CHANNEL_SYNC_URL = @"/rest/ws/group/list";
+static NSString *const CHANNEL_SYNC_URL = @"/rest/ws/group/v3/list";
+static NSString *const CREATE_CHANNEL_URL = @"/rest/ws/group/create";
+static NSString *const DELETE_CHANNEL_URL = @"/rest/ws/group/delete";
+static NSString *const LEFT_CHANNEL_URL = @"/rest/ws/group/left";
+static NSString *const ADD_MEMBER_TO_CHANNEL_URL = @"/rest/ws/group/add/member";
+static NSString *const REMOVE_MEMBER_FROM_CHANNEL_URL = @"/rest/ws/group/remove/member";
+static NSString *const UPDATE_CHANNEL_URL = @"/rest/ws/group/update";
+static NSString *const UPDATE_GROUP_USER =  @"/rest/ws/group/user/update";
+static NSString *const Add_USERS_TO_MANY_GROUPS = @"/rest/ws/group/add/users";
+static NSString *const CHANNEL_INFO_ON_IDS = @"/rest/ws/group/details";
+static NSString *const CHANNEL_FILTER_API = @"/rest/ws/group/filter";
+static NSString *const CONTACT_FAVOURITE_LIST = @"/rest/ws/group/favourite/list/get";
 
 /************************************************
  SUB GROUP URL : ADD A SINGLE CHILD
  *************************************************/
 
-#define ADD_SUB_GROUP @"/rest/ws/group/add/subgroup"
-#define REMOVE_SUB_GROUP @"/rest/ws/group/remove/subgroup"
+static NSString *const ADD_SUB_GROUP = @"/rest/ws/group/add/subgroup";
+static NSString *const REMOVE_SUB_GROUP = @"/rest/ws/group/remove/subgroup";
 
 /************************************************
  SUB GROUP URL : ADD MULTIPLE CHILD
  *************************************************/
 
-#define ADD_MULTIPLE_SUB_GROUP @"/rest/ws/group/add/subgroups"
-#define REMOVE_MULTIPLE_SUB_GROUP @"/rest/ws/group/remove/subgroups"
-
+static NSString *const ADD_MULTIPLE_SUB_GROUP = @"/rest/ws/group/add/subgroups";
+static NSString *const REMOVE_MULTIPLE_SUB_GROUP = @"/rest/ws/group/remove/subgroups";
 
 #import "ALChannelClientService.h"
 #import "NSString+Encode.h"
@@ -46,7 +44,6 @@
 #import "ALUserDetailListFeed.h"
 #import "ALUserService.h"
 #import "ALMuteRequest.h"
-
 
 @interface ALChannelClientService ()
 
@@ -60,7 +57,7 @@
     NSString * theParamString = [NSString stringWithFormat:@"groupId=%@", channelKey];
     if(clientChannelKey)
     {
-        theParamString = [NSString stringWithFormat:@"clientGroupId=%@", clientChannelKey];
+        theParamString = [NSString stringWithFormat:@"clientGroupId=%@", [clientChannelKey urlEncodeUsingNSUTF8StringEncoding]];
     }
     NSMutableURLRequest * theRequest = [ALRequestHandler createGETRequestWithUrlString:theUrlString paramString:theParamString];
     
@@ -69,6 +66,8 @@
         if(error)
         {
             ALSLog(ALLoggerSeverityError, @"ERROR IN CHANNEL_INFORMATION SERVER CALL REQUEST %@", error);
+            completion(error, nil);
+            return;
         }
         else
         {
@@ -194,7 +193,7 @@
     NSString * theParamString = [NSString stringWithFormat:@"groupId=%@&userId=%@",channelKey,[userId urlEncodeUsingNSUTF8StringEncoding]];
     if(clientChannelKey)
     {
-        theParamString = [NSString stringWithFormat:@"clientGroupId=%@&userId=%@",clientChannelKey,[userId urlEncodeUsingNSUTF8StringEncoding]];
+        theParamString = [NSString stringWithFormat:@"clientGroupId=%@&userId=%@",[clientChannelKey urlEncodeUsingNSUTF8StringEncoding],[userId urlEncodeUsingNSUTF8StringEncoding]];
     }
     
     NSMutableURLRequest * theRequest = [ALRequestHandler createGETRequestWithUrlString:theUrlString paramString:theParamString];
@@ -222,7 +221,7 @@
     NSString * theParamString = [NSString stringWithFormat:@"groupId=%@&userId=%@", channelKey,[userId urlEncodeUsingNSUTF8StringEncoding]];
     if(clientChannelKey)
     {
-        theParamString = [NSString stringWithFormat:@"clientGroupId=%@&userId=%@",clientChannelKey,[userId urlEncodeUsingNSUTF8StringEncoding]];
+        theParamString = [NSString stringWithFormat:@"clientGroupId=%@&userId=%@",[clientChannelKey urlEncodeUsingNSUTF8StringEncoding],[userId urlEncodeUsingNSUTF8StringEncoding]];
     }
     NSMutableURLRequest * theRequest = [ALRequestHandler createGETRequestWithUrlString:theUrlString paramString:theParamString];
     
@@ -249,7 +248,7 @@
     NSString * theParamString = [NSString stringWithFormat:@"groupId=%@", channelKey];
     if(clientChannelKey)
     {
-        theParamString = [NSString stringWithFormat:@"clientGroupId=%@",clientChannelKey];
+        theParamString = [NSString stringWithFormat:@"clientGroupId=%@",[clientChannelKey urlEncodeUsingNSUTF8StringEncoding]];
     }
     NSMutableURLRequest * theRequest = [ALRequestHandler createGETRequestWithUrlString:theUrlString paramString:theParamString];
     
@@ -276,7 +275,7 @@
     NSString * theParamString = [NSString stringWithFormat:@"groupId=%@&userId=%@",channelKey,[userId urlEncodeUsingNSUTF8StringEncoding]];
     if(clientChannelKey)
     {
-        theParamString = [NSString stringWithFormat:@"clientGroupId=%@&userId=%@",clientChannelKey,[userId urlEncodeUsingNSUTF8StringEncoding]];
+        theParamString = [NSString stringWithFormat:@"clientGroupId=%@&userId=%@",[clientChannelKey urlEncodeUsingNSUTF8StringEncoding],[userId urlEncodeUsingNSUTF8StringEncoding]];
     }
     NSMutableURLRequest * theRequest = [ALRequestHandler createGETRequestWithUrlString:theUrlString paramString:theParamString];
     
@@ -338,8 +337,13 @@
           andNewName:(NSString *)newName andImageURL:(NSString *)imageURL metadata:(NSMutableDictionary *)metaData
          orChildKeys:(NSMutableArray *)childKeysList  orChannelUsers:(NSMutableArray *)channelUsers  andCompletion:(void(^)(NSError *error, ALAPIResponse *response))completion
 {
-    NSString * theUrlString = [NSString stringWithFormat:@"%@%@", KBASE_URL, UPDATE_CHANNEL_URL];
-    
+    NSString * theUrlString;
+    if(imageURL && [imageURL isEqualToString:@""]){
+     theUrlString =   [NSString stringWithFormat:@"%@%@?resetGroupImageUrl=true", KBASE_URL, UPDATE_CHANNEL_URL];
+    }else{
+        theUrlString =  [NSString stringWithFormat:@"%@%@", KBASE_URL, UPDATE_CHANNEL_URL];
+    }
+
     NSMutableDictionary *dictionary = [NSMutableDictionary new];
     
     if(newName.length)
@@ -463,6 +467,8 @@
         if(error)
         {
             ALSLog(ALLoggerSeverityError, @"ERROR IN CHANNEL_SYNCHRONIZATION SERVER CALL REQUEST %@", error);
+            completion(error, nil);
+            return;
         }
         else
         {
@@ -904,7 +910,6 @@
         {
             ALSLog(ALLoggerSeverityError, @"ERROR IN GET_CONTACTS_GROUP_MEMBERS server call %@", error);
             completion(error, nil);
-            
         }
         else
         {
@@ -1011,7 +1016,7 @@
             ALSLog(ALLoggerSeverityInfo, @"RESPONSE_CHANNEL_INFORMATION :: %@", theJson);
             AlChannelFeedResponse *response = [[AlChannelFeedResponse alloc] initWithJSONString:theJson];
             
-            if([response.status isEqualToString: RESPONSE_SUCCESS] ){
+            if([response.status isEqualToString: AL_RESPONSE_SUCCESS] ){
                 NSMutableArray * members = response.alChannel.membersId;
                 ALContactService * contactService = [ALContactService new];
                 NSMutableArray* userNotPresentIds = [NSMutableArray new];

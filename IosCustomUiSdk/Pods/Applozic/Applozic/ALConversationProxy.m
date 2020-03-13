@@ -47,6 +47,10 @@
 }
 
 -(ALTopicDetail*)getTopicDetail {
+    if(!self.topicDetailJson){
+        return nil;
+    }
+
     NSError *jsonError;
     NSData *objectData = [self.topicDetailJson dataUsingEncoding:NSUTF8StringEncoding];
     NSDictionary *json = [NSJSONSerialization JSONObjectWithData:objectData

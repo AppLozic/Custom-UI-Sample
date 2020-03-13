@@ -9,13 +9,17 @@
 #import "ALMessageServiceWrapper.h"
 #import <Applozic/ALMessageService.h>
 #import <Applozic/ALMessageDBService.h>
-#import <Applozic/ALConnection.h>
 #import <Applozic/ALConnectionQueueHandler.h>
 #import <Applozic/ALMessageClientService.h>
 #include <tgmath.h>
 #import <MobileCoreServices/MobileCoreServices.h>
 #import <Applozic/ALApplozicSettings.h>
+#import "ALHTTPManager.h"
+#import "ALDownloadTask.h"
 
+@interface ALMessageServiceWrapper  ()<ApplozicAttachmentDelegate>
+
+@end
 
 @implementation ALMessageServiceWrapper
 
@@ -68,12 +72,11 @@ andWithStatusDelegate:(id)statusDelegate
     if(alMessage.contactIds){
         theMessage.fileMeta.name = [NSString stringWithFormat:@"%@-5-%@",alMessage.contactIds, attachmentLocalPath.lastPathComponent];
     }
-    
-    CFStringRef pathExtension = (__bridge_retained CFStringRef)[attachmentLocalPath pathExtension];
-    CFStringRef type = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension, NULL);
-    CFRelease(pathExtension);
-    NSString *mimeType = (__bridge_transfer NSString *)UTTypeCopyPreferredTagWithClass(type, kUTTagClassMIMEType);
-    
+    NSString *mimeType = [ALUtilityClass fileMIMEType:attachmentLocalPath];
+    if(!mimeType) {
+        return;
+    }
+
     theMessage.fileMeta.contentType = mimeType;
     if( theMessage.contentType == ALMESSAGE_CONTENT_VCARD){
         theMessage.fileMeta.contentType = @"text/x-vcard";
@@ -101,9 +104,9 @@ andWithStatusDelegate:(id)statusDelegate
             [self.messageServiceDelegate uploadDownloadFailed:alMessage];
             return;
         }
-        
-        [ALMessageService proessUploadImageForMessage:theMessage databaseObj:theMessageEntity.fileMetaInfo uploadURL:message  withdelegate:self];
-        
+        ALHTTPManager *httpManager = [[ALHTTPManager alloc]init];
+        httpManager.attachmentProgressDelegate = self;
+        [httpManager processUploadFileForMessage:[messageDBService createMessageEntity:theMessageEntity] uploadURL:message];
     }];
     
 }
@@ -152,85 +155,36 @@ andWithStatusDelegate:(id)statusDelegate
 }
 
 
-
 -(void) downloadMessageAttachment:(ALMessage*)alMessage{
-    
-    [ALMessageService processImageDownloadforMessage:alMessage withdelegate:self];
-    
+
+    ALHTTPManager * manager =  [[ALHTTPManager alloc] init];
+    manager.attachmentProgressDelegate = self;
+    [manager processDownloadForMessage:alMessage isAttachmentDownload:YES];
+
 }
 
--(void)connectionDidFinishLoading:(ALConnection *)connection{
-    
-    [[[ALConnectionQueueHandler sharedConnectionQueueHandler] getCurrentConnectionQueue] removeObject:connection];
-    ALMessageDBService * dbService = [[ALMessageDBService alloc] init];
-    if ([connection.connectionType isEqualToString:@"Image Posting"])
-    {
-        DB_Message * dbMessage = (DB_Message*)[dbService getMessageByKey:@"key" value:connection.keystring];
-        ALMessage * message = [dbService createMessageEntity:dbMessage];
-        NSError * theJsonError = nil;
-        NSDictionary *theJson = [NSJSONSerialization JSONObjectWithData:connection.mData options:NSJSONReadingMutableLeaves error:&theJsonError];
-
-        if(ALApplozicSettings.isS3StorageServiceEnabled){
-            [message.fileMeta populate:theJson];
-        }else{
-            NSDictionary *fileInfo = [theJson objectForKey:@"fileMeta"];
-            [message.fileMeta populate:fileInfo];
-        }
-        ALMessage * almessage =  [ALMessageService processFileUploadSucess:message];
-        [[ALMessageService sharedInstance] sendMessages:almessage withCompletion:^(NSString *message, NSError *error) {
-            
-            if(error)
-            {
-                ALSLog(ALLoggerSeverityError, @"REACH_SEND_ERROR : %@",error);
-                [self.messageServiceDelegate uploadDownloadFailed:almessage];
-                return;
-            }else{
-                [self.messageServiceDelegate uploadCompleted:almessage];
-            }
-        }];
-        
-    } else {
-        
-        //This is download Sucessfull...
-        DB_Message * messageEntity = (DB_Message*)[dbService getMessageByKey:@"key" value:connection.keystring];
-        
-        NSString * docPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-        NSArray *componentsArray = [messageEntity.fileMetaInfo.name componentsSeparatedByString:@"."];
-        NSString *fileExtension = [componentsArray lastObject];
-        NSString * filePath = [docPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_local.%@",connection.keystring,fileExtension]];
-        [connection.mData writeToFile:filePath atomically:YES];
-        
-        // UPDATE DB
-        messageEntity.inProgress = [NSNumber numberWithBool:NO];
-        messageEntity.isUploadFailed=[NSNumber numberWithBool:NO];
-        messageEntity.filePath = [NSString stringWithFormat:@"%@_local.%@",connection.keystring,fileExtension];
-        [[ALDBHandler sharedInstance].managedObjectContext save:nil];
-        ALMessage * almessage = [[ALMessageDBService new ] createMessageEntity:messageEntity];
-        [self.messageServiceDelegate DownloadCompleted:almessage];
-    }
-    
+- (void)onDownloadCompleted:(ALMessage *)alMessage {
+   [self.messageServiceDelegate DownloadCompleted:alMessage];
 }
 
--(void)connection:(ALConnection *)connection didReceiveData:(NSData *)data{
-    
-    [connection.mData appendData:data];
-    
-    if ([connection.connectionType isEqualToString:@"Image Posting"])
-    {
-        ALSLog(ALLoggerSeverityInfo, @" file posting done");
-        return;
-    }
-    [self.messageServiceDelegate updateBytesDownloaded:connection.mData.length];
-    
+- (void)onDownloadFailed:(ALMessage *)alMessage {
+    [self.messageServiceDelegate uploadDownloadFailed:alMessage];
 }
 
--(void)connection:(ALConnection *)connection didSendBodyData:(NSInteger)bytesWritten
-totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
-{
-    //upload percentage
-    ALSLog(ALLoggerSeverityInfo, @"didSendBodyData..upload is in process...");
-    [self.messageServiceDelegate updateBytesUploaded:totalBytesWritten];
+- (void)onUpdateBytesDownloaded:(int64_t)bytesReceived withMessage:(ALMessage *)alMessage {
+    [self.messageServiceDelegate updateBytesDownloaded:(NSUInteger)bytesReceived];
 }
 
+- (void)onUpdateBytesUploaded:(int64_t)bytesSent withMessage:(ALMessage *)alMessage {
+    [self.messageServiceDelegate updateBytesUploaded:(NSInteger)bytesSent];
+}
+
+- (void)onUploadCompleted:(ALMessage *)alMessage withOldMessageKey:(NSString *)oldMessageKey {
+    [self.messageServiceDelegate uploadCompleted:alMessage];
+}
+
+- (void)onUploadFailed:(ALMessage *)alMessage {
+    [self.messageServiceDelegate uploadDownloadFailed:alMessage];
+}
 
 @end

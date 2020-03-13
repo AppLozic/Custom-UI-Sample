@@ -11,7 +11,6 @@
 #import "ALUserProfileVC.h"
 #import "ALApplozicSettings.h"
 #import "ALUtilityClass.h"
-#import "ALConnection.h"
 #import "ALConnectionQueueHandler.h"
 #import "ALUserDefaultsHandler.h"
 #import "ALImagePickerHandler.h"
@@ -26,11 +25,14 @@
 #import "ALConstant.h"
 #import "ALMessagesViewController.h"
 #import "ALPushAssist.h"
+#import "ALUserDefaultsHandler.h"
+#import "ALUserService.h"
+#import "ALUserDetail.h"
+#import "ALHTTPManager.h"
 
-@interface ALUserProfileVC () <NSURLConnectionDataDelegate>
+@interface ALUserProfileVC ()
 
 @property (nonatomic, retain) UIImagePickerController * mImagePicker;
-@property (nonatomic, strong) ALConnection * alConnection;
 @property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
 @property (strong, nonatomic) IBOutlet UISwitch *notificationToggle;
 @property (strong, nonatomic) IBOutlet UILabel *userStatusLabel;
@@ -67,8 +69,9 @@
     self.notificationToggle.transform = CGAffineTransformMakeScale(0.75, 0.75);
     self.onlineToggleSwitch.transform = CGAffineTransformMakeScale(0.75, 0.75);
     
-    
-    
+    [self.profileMainImage setBackgroundColor:[ALApplozicSettings getProfileMainColour]];
+    [self.profileMainView setBackgroundColor:[ALApplozicSettings getProfileSubColour]];
+    [self.mobileNotification setTextColor:[ALApplozicSettings getProfileMainColour]];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -147,7 +150,7 @@
     [self.mobileNotification setText:NSLocalizedStringWithDefaultValue(@"mobileNotificationsTitle", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Mobile Notifications", @"")];
     
     
-    BOOL checkMode = ([ALUserDefaultsHandler getNotificationMode] == NOTIFICATION_DISABLE);
+    BOOL checkMode = ([ALUserDefaultsHandler getNotificationMode] == AL_NOTIFICATION_DISABLE);
     [self.notificationToggle setOn:(!checkMode) animated:YES];
     
 }
@@ -442,53 +445,6 @@
     [self confirmUserForProfileImage:normalImage];
 }
 
-//==============================================================================================================================
-#pragma NSURL CONNECTION DELEGATES + HELPER METHODS
-//==============================================================================================================================
-
--(void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
-{
-    ALSLog(ALLoggerSeverityError, @"PROFILE_IMAGE_UPLOAD_ERROR :: %@",error.description);
-    [self.activityIndicator stopAnimating];
-}
-
--(void)connection:(NSURLConnection *)connection didSendBodyData:(NSInteger)bytesWritten
-totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
-{
-    ALSLog(ALLoggerSeverityInfo, @"TOTAL_BYTES_WRITTEN :: %lu",totalBytesWritten);
-}
-
--(void)connectionDidFinishLoading:(ALConnection *)connection
-{
-    ALSLog(ALLoggerSeverityInfo, @"CONNNECTION_FINISHED");
-    [[[ALConnectionQueueHandler sharedConnectionQueueHandler] getCurrentConnectionQueue] removeObject:connection];
-    if([connection.connectionType isEqualToString:CONNECTION_TYPE_USER_IMG_UPLOAD])
-    {
-        imageLinkFromServer = [[NSString alloc] initWithData:connection.mData encoding:NSUTF8StringEncoding];
-        ALSLog(ALLoggerSeverityInfo, @"IMAGE_LINK :: %@",imageLinkFromServer);
-        ALUserService *userService = [ALUserService new];
-        [userService updateUserDisplayName:@"" andUserImage:imageLinkFromServer userStatus:@"" withCompletion:^(id theJson, NSError *error) {
-            
-            ALSLog(ALLoggerSeverityInfo, @"SERVER_RESPONSE_IMAGE_UPDATE :: %@",(NSString *)theJson);
-            ALSLog(ALLoggerSeverityError, @"ERROR :: %@",error.description);
-            if(!error)
-            {
-                ALSLog(ALLoggerSeverityInfo, @"IMAGE_UPDATED_SUCCESSFULLY");
-                
-                
-                [ALUtilityClass showAlertMessage:NSLocalizedStringWithDefaultValue(@"imageUpdateText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Image Updated Successfully!!!" , @"")  andTitle:NSLocalizedStringWithDefaultValue(@"alertText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Alert" , @"") ];
-                [ALUserDefaultsHandler setProfileImageLinkFromServer:imageLinkFromServer];
-                
-            }
-        }];
-    }
-    [self.activityIndicator stopAnimating];
-}
-
--(void)connection:(ALConnection *)connection didReceiveData:(NSData *)data
-{
-    [connection.mData appendData:data];
-}
 
 -(void)confirmUserForProfileImage:(UIImage *)image
 {
@@ -512,10 +468,40 @@ totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInte
             return;
         }
         
-        NSString * uploadUrl = [KBASE_URL stringByAppendingString:IMAGE_UPLOAD_URL];
-        [self proessUploadImage:image uploadURL:uploadUrl withdelegate:self];
-        
+        NSString * uploadUrl = [KBASE_URL stringByAppendingString:AL_IMAGE_UPLOAD_URL];
+
+        ALHTTPManager * manager = [[ALHTTPManager alloc]init];
+        [manager uploadProfileImage:image withFilePath:self->mainFilePath uploadURL:uploadUrl withCompletion:^(NSData * _Nullable data, NSError *error) {
+
+            if(error == nil){
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    NSString *imageLinkFromServer = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+                    ALSLog(ALLoggerSeverityInfo, @"PROFILE IMAGE URL :: %@",imageLinkFromServer);
+                    self->imageLinkFromServer = imageLinkFromServer;
+                    ALUserService *userService = [ALUserService new];
+                    [userService updateUserDisplayName:@"" andUserImage:imageLinkFromServer userStatus:@"" withCompletion:^(id theJson, NSError *error) {
+
+                        ALSLog(ALLoggerSeverityInfo, @"SERVER_RESPONSE_IMAGE_UPDATE :: %@",(NSString *)theJson);
+                        ALSLog(ALLoggerSeverityError, @"ERROR :: %@",error.description);
+                        if(!error)
+                        {
+                            ALSLog(ALLoggerSeverityInfo, @"IMAGE_UPDATED_SUCCESSFULLY");
+
+                            [ALUtilityClass showAlertMessage:NSLocalizedStringWithDefaultValue(@"imageUpdateText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Image Updated Successfully!!!" , @"")  andTitle:NSLocalizedStringWithDefaultValue(@"alertText", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Alert" , @"") ];
+                            [ALUserDefaultsHandler setProfileImageLinkFromServer:self->imageLinkFromServer];
+
+                        }
+                    }];
+                });
+            }
+
+         dispatch_async(dispatch_get_main_queue(), ^{
+             [self.activityIndicator stopAnimating];
+            });
+        }];
+
     }];
+
     
     [alert addAction:cancel];
     [alert addAction:upload];
@@ -534,52 +520,6 @@ totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInte
     NSString *filePath = [ALImagePickerHandler saveImageToDocDirectory:image];
     [ALUserDefaultsHandler setProfileImageLink:filePath];
     return filePath;
-}
-
--(void)proessUploadImage:(UIImage *)profileImage uploadURL:(NSString *)uploadURL withdelegate:(id)delegate
-{
-    [self.activityIndicator startAnimating];
-    NSString *filePath = mainFilePath;
-    NSMutableURLRequest * request = [ALRequestHandler createPOSTRequestWithUrlString:uploadURL paramString:nil];
-    
-    if ([[NSFileManager defaultManager] fileExistsAtPath:filePath])
-    {
-        //Create boundary, it can be anything
-        NSString *boundary = @"------ApplogicBoundary4QuqLuM1cE5lMwCy";
-        // set Content-Type in HTTP header
-        NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
-        [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
-        // post body
-        NSMutableData *body = [NSMutableData data];
-        NSString *FileParamConstant = @"file";
-        NSData *imageData = [[NSData alloc] initWithContentsOfFile:filePath];
-        ALSLog(ALLoggerSeverityInfo, @"IMAGE_DATA :: %f",imageData.length/1024.0);
-        
-        //Assuming data is not nil we add this to the multipart form
-        if (imageData)
-        {
-            
-            [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-            [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", FileParamConstant, @"imge_123_profile"] dataUsingEncoding:NSUTF8StringEncoding]];
-            
-            [body appendData:[[NSString stringWithFormat:@"Content-Type:%@\r\n\r\n", @"image/jpeg"] dataUsingEncoding:NSUTF8StringEncoding]];
-            [body appendData:imageData];
-            [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
-        }
-        //Close off the request with the boundary
-        [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-        // setting the body of the post to the request
-        [request setHTTPBody:body];
-        // set URL
-        [request setURL:[NSURL URLWithString:uploadURL]];
-        
-        ALConnection * connection = [[ALConnection alloc] initWithRequest:request delegate:delegate startImmediately:YES];
-        connection.connectionType = CONNECTION_TYPE_USER_IMG_UPLOAD;
-        
-        [[[ALConnectionQueueHandler sharedConnectionQueueHandler] getCurrentConnectionQueue] addObject:connection];
-        
-    }
-    
 }
 
 -(IBAction)editButtonAction:(id)sender
@@ -639,9 +579,9 @@ totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInte
                                                                                       if(!error)
                                                                                       {
                                                                                           ALSLog(ALLoggerSeverityInfo, @"USER_STATUS_UPDATED_SUCCESSFULLY");
-                                                                                          myContact.userStatus = statusText;
-                                                                                          ALSLog(ALLoggerSeverityInfo, @"USER_STATUS_UPDATED_SUCCESSFULLY  %@", myContact.userStatus);
-                                                                                          [alContactService updateContact:myContact];
+                                                                                          self->myContact.userStatus = statusText;
+                                                                                          ALSLog(ALLoggerSeverityInfo, @"USER_STATUS_UPDATED_SUCCESSFULLY  %@", self->myContact.userStatus);
+                                                                                          [self->alContactService updateContact:self->myContact];
                                                                                           [self.userStatusLabel setText: statusText];
                                                                                           [ALUserDefaultsHandler setLoggedInUserStatus:statusText];
                                                                                           

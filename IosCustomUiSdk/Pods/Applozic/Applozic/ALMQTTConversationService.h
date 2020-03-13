@@ -38,17 +38,19 @@
 
 @property (nonatomic, strong) ALSyncCallService *alSyncCallService;
 
-@property (nonatomic, strong) id<ALMQTTConversationDelegate>mqttConversationDelegate;
+@property (nonatomic, weak) id<ALMQTTConversationDelegate>mqttConversationDelegate;
 
-@property (nonatomic, strong) id<ApplozicUpdatesDelegate>realTimeUpdate;
+@property (nonatomic, weak) id<ApplozicUpdatesDelegate>realTimeUpdate;
 
 @property (nonatomic, readwrite) MQTTSession *session;
 
 -(void) subscribeToConversation;
+-(void) subscribeToConversationWithTopic:(NSString *) topic;
 
 -(void) unsubscribeToConversation;
+-(void) unsubscribeToConversationWithTopic:(NSString *) topic;
 
--(void) unsubscribeToConversation: (NSString *)userKey;
+-(BOOL) unsubscribeToConversation: (NSString *)userKey;
 
 -(void) sendTypingStatus:(NSString *) applicationKey userID:(NSString *) userId andChannelKey:(NSNumber *)channelKey typing: (BOOL) typing;
 
@@ -58,5 +60,8 @@
 -(void)subscribeToOpenChannel:(NSNumber *)channelKey;
 -(void)unSubscribeToOpenChannel:(NSNumber *)channelKey;
 -(void) syncReceivedMessage :(ALMessage *)alMessage withNSMutableDictionary:(NSMutableDictionary*)nsMutableDictionary;
+
+-(void) retryConnection;
+-(void) retryConnectionWithTopic:(NSString *)topic;
 
 @end

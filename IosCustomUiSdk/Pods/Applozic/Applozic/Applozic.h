@@ -47,13 +47,14 @@ FOUNDATION_EXPORT const unsigned char ApplozicVersionString[];
 #import <Applozic/ALUtilityClass.h>
 #import <Applozic/ALNewContactsViewController.h>
 #import <Applozic/Applozic.h>
+#import <Applozic/ALContactMessageCell.h>
+#import <Applozic/ALMyContactMessageCell.h>
 #import <Applozic/ALResponseHandler.h>
 #import <Applozic/ALImagePickerHandler.h>
 #import <Applozic/ALFileMetaInfo.h>
 #import <Applozic/ALNotificationView.h>
 #import <Applozic/DB_CONTACT.h>
 #import <Applozic/ALImageCell.h>
-#import <Applozic/ALConnection.h>
 #import <Applozic/ALBaseViewController.h>
 #import <Applozic/ALConnectionQueueHandler.h>
 #import <Applozic/DB_Message.h>
@@ -69,7 +70,6 @@ FOUNDATION_EXPORT const unsigned char ApplozicVersionString[];
 #import <Applozic/ALContactService.h>
 #import <Applozic/ALUserService.h>
 #import <Applozic/ALCollectionReusableView.h>
-#import <Applozic/ALContactMessageCell.h>
 #import <Applozic/ALCustomCell.h>
 #import <Applozic/ALDocumentsCell.h>
 #import <Applozic/ALGroupCreationViewController.h>
@@ -89,7 +89,6 @@ FOUNDATION_EXPORT const unsigned char ApplozicVersionString[];
 #import <Applozic/ALMultipleAttachmentView.h>
 #import <Applozic/ALPushAssist.h>
 #import <Applozic/ALSendMessageResponse.h>
-#import <Applozic/ALShowImageViewController.h>
 #import <Applozic/ALVideoCell.h>
 #import <Applozic/TSMessage.h>
 #import <Applozic/TSMessageView.h>
@@ -121,3 +120,6 @@ FOUNDATION_EXPORT const unsigned char ApplozicVersionString[];
 #import <Applozic/ALRealTimeUpdate.h>
 #import <Applozic/ALMultimediaData.h>
 #import <Applozic/UIImage+animatedGIF.h>
+#import <Applozic/ALAudioSession.h>
+#import <Applozic/ALChannelOfTwoMetaData.h>
+#import <Applozic/ALNotificationHelper.h>

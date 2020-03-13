@@ -9,8 +9,12 @@
 #import "ALDBHandler.h"
 #import "DB_CONTACT.h"
 #import "ALContact.h"
+#import "ALUtilityClass.h"
+#import "ALApplozicSettings.h"
 
 @implementation ALDBHandler
+
+dispatch_queue_t dispatchGlobalQueue;
 
 +(ALDBHandler *) sharedInstance
 {
@@ -55,13 +59,6 @@
 
 @synthesize persistentStoreCoordinator = _persistentStoreCoordinator;
 
-- (NSURL *)applicationDocumentsDirectory {
-    
-    // The directory the application uses to store the Core Data store file. This code uses a directory named "tricon-infotech.coredata_demo" in the application's documents directory.
-    
-    return [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
-}
-
 - (NSManagedObjectModel *)managedObjectModel {
     
     // The managed object model for the application. It is a fatal error for the application not to be able to find and load its model.
@@ -79,48 +76,57 @@
 }
 
 - (NSPersistentStoreCoordinator *)persistentStoreCoordinator {
-    
-    // The persistent store coordinator for the application. This implementation creates and return a coordinator, having added the store for the application to it.
-    
-    if (_persistentStoreCoordinator != nil) {
-        
-        return _persistentStoreCoordinator;
-        
+
+    @synchronized (self) {
+        // The persistent store coordinator for the application. This implementation creates and return a coordinator, having added the store for the application to it.
+
+        if (_persistentStoreCoordinator != nil) {
+
+            return _persistentStoreCoordinator;
+
+        }
+
+        // Create the coordinator and store
+        _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
+
+        NSURL *storeURL =  [ALUtilityClass getApplicationDirectoryWithFilePath:AL_SQLITE_FILE_NAME];
+
+        NSURL *groupURL = [ALUtilityClass getAppsGroupDirectoryWithFilePath:AL_SQLITE_FILE_NAME];
+
+        NSError *error = nil;
+        NSPersistentStore  *sourceStore  = nil;
+        NSPersistentStore  *destinationStore  = nil;
+        NSDictionary *options =   @{NSInferMappingModelAutomaticallyOption:[NSNumber numberWithBool:YES],NSMigratePersistentStoresAutomaticallyOption:[NSNumber numberWithBool:YES]};
+
+        if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:options error:&error]){
+            ALSLog(ALLoggerSeverityError, @"Failed to setup the persistentStoreCoordinator %@, %@", error, [error userInfo]);
+        } else {
+            sourceStore = [_persistentStoreCoordinator persistentStoreForURL:storeURL];
+            if (sourceStore != nil && groupURL){
+                // Perform the migration
+
+                destinationStore = [_persistentStoreCoordinator migratePersistentStore:sourceStore toURL:groupURL options:options withType:NSSQLiteStoreType error:&error];
+                if (destinationStore == nil){
+                    ALSLog(ALLoggerSeverityError, @"Failed to migratePersistentStore");
+                } else {
+
+                    NSFileCoordinator *coord = [[NSFileCoordinator alloc]initWithFilePresenter:nil];
+                    [coord coordinateWritingItemAtURL:storeURL options:0 error:nil byAccessor:^(NSURL *url)
+                     {
+                         NSError *error;
+                         [[NSFileManager defaultManager] removeItemAtURL:url error:&error];
+                         if(error){
+                             ALSLog(ALLoggerSeverityError, @"Failed to Delete the data base file %@, %@", error, [error userInfo]);
+                         }
+
+                     }];
+
+                }
+            }
+        }
+
     }
-    
-    // Create the coordinator and store
-    
-    _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
-    
-    NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:@"AppLozic.sqlite"];
-    
-    NSError *error = nil;
-    
-    NSString *failureReason = @"There was an error creating or loading the application's saved data.";
-    
-    if (![_persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:@{NSInferMappingModelAutomaticallyOption:[NSNumber numberWithBool:YES],NSMigratePersistentStoresAutomaticallyOption:[NSNumber numberWithBool:YES]} error:&error]) {
-        
-        // Report any error we got.
-        
-        NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-        
-        dict[NSLocalizedDescriptionKey] = @"Failed to initialize the application's saved data";
-        
-        dict[NSLocalizedFailureReasonErrorKey] = failureReason;
-        
-        dict[NSUnderlyingErrorKey] = error;
-        
-        error = [NSError errorWithDomain:@"YOUR_ERROR_DOMAIN" code:9999 userInfo:dict];
-        
-        // Replace this with code to handle the error appropriately.
-        
-        // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-        
-        ALSLog(ALLoggerSeverityError, @"Unresolved error %@, %@", error, [error userInfo]);
-        
-        abort();
-    }
-    
+
     return _persistentStoreCoordinator;
 }
 
@@ -143,7 +149,7 @@
         
     }
     
-    _managedObjectContext = [[NSManagedObjectContext alloc] init];
+    _managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
     
     [_managedObjectContext setPersistentStoreCoordinator:coordinator];
     [_managedObjectContext setMergePolicy:NSMergeByPropertyObjectTrumpMergePolicy];
@@ -162,13 +168,7 @@
         
         if ([managedObjectContext hasChanges] && ![managedObjectContext save:&error]) {
             
-            // Replace this implementation with code to handle the error appropriately.
-            
-            // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-            
             ALSLog(ALLoggerSeverityError, @"Unresolved error %@, %@", error, [error userInfo]);
-            
-            abort();
         }
     }
 }
@@ -344,6 +344,11 @@
 }
 
 - (ALContact *) loadContactByKey:(NSString *) key value:(NSString*) value {
+
+    if(!value){
+        return nil;
+    }
+
     DB_CONTACT *dbContact = [self getContactByKey:key value:value];
     ALContact *contact = [[ALContact alloc]init];
 
@@ -436,6 +441,38 @@
     return result;
 }
 
+- (void) savePrivateAndMainContext:(NSManagedObjectContext*)context
+                        completion:(void (^)(NSError*error))completion {
+    
+    NSError* error;
+    if (context.hasChanges && [context save:&error]) {
+        NSManagedObjectContext* parentContext = [context parentContext];
+        [parentContext performBlock:^ {
+            NSError* parentContextError;
+            if (parentContext.hasChanges && [parentContext save:&parentContextError]) {
+                completion(nil);
+            } else {
+                if (parentContextError) {
+                    ALSLog(ALLoggerSeverityError, @"DB ERROR in MainContext :%@",parentContextError);
+                }
+                completion(parentContextError);
+            }
+        }];
+    } else {
+        if (error) {
+            ALSLog(ALLoggerSeverityError, @"DB ERROR in savePrivateAndMainContext :%@",error);
+            [context rollback];
+        }
+        completion(error);
+    }
+}
 
+- (NSManagedObjectContext *)privateContext {
+
+    NSManagedObjectContext *managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
+    [managedObjectContext setParentContext:self.managedObjectContext];
+
+    return managedObjectContext;
+}
 
 @end

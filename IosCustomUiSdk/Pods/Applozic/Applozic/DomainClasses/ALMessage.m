@@ -8,7 +8,11 @@
 #import "ALMessage.h"
 #import "ALUtilityClass.h"
 #import "ALAudioVideoBaseVC.h"
-
+#import "ALChannel.h"
+#import "ALContact.h"
+#import "ALChannelService.h"
+#import "ALContactDBService.h"
+#import "ALUserDefaultsHandler.h"
 
 @implementation ALMessage
 
@@ -246,6 +250,11 @@
     return (self.contentType == AV_CALL_CONTENT_THREE);
 }
 
+-(BOOL)isResetUnreadCountMessage {
+    return (self.groupId && self.isChannelContentTypeMessage &&
+            self.metadata && [self.metadata  valueForKey:AL_RESET_UNREAD_COUNT]
+            && [[self.metadata  valueForKey:AL_RESET_UNREAD_COUNT] isEqualToString:ALUserDefaultsHandler.getUserId]);
+}
 
 -(NSString*)getNotificationText
 {
@@ -348,13 +357,13 @@
 -(BOOL)isPushNotificationMessage
 {
   return (self.metadata && [self.metadata valueForKey:@"category"] &&
-   [ [self.metadata valueForKey:@"category"] isEqualToString:CATEGORY_PUSHNNOTIFICATION]);
+   [ [self.metadata valueForKey:@"category"] isEqualToString:AL_CATEGORY_PUSHNNOTIFICATION]);
 }
 
 -(BOOL)isMessageCategoryHidden
 {
     return (self.metadata && [self.metadata valueForKey:@"category"] &&
-            [ [self.metadata valueForKey:@"category"] isEqualToString:CATEGORY_HIDDEN]);
+            [ [self.metadata valueForKey:@"category"] isEqualToString:AL_CATEGORY_HIDDEN]);
 }
 
 
@@ -365,11 +374,11 @@
 
 -(BOOL)isSentMessage
 {
-    return [self.type isEqualToString:OUT_BOX];
+    return [self.type isEqualToString:AL_OUT_BOX];
 }
 -(BOOL)isReceivedMessage
 {
-    return [self.type isEqualToString:IN_BOX];
+    return [self.type isEqualToString:AL_IN_BOX];
 
 }
 
@@ -381,6 +390,16 @@
 {
     return (self.contentType ==ALMESSAGE_CONTENT_VCARD);
 
+}
+
+-(BOOL)isLinkMessage
+{
+    return (_metadata && [_metadata  valueForKey:@"linkMessage"] && [ [_metadata  valueForKey:@"linkMessage"] isEqualToString:@"true"]);
+}
+
+-(BOOL)isChannelContentTypeMessage
+{
+    return (self.contentType == ALMESSAGE_CHANNEL_NOTIFICATION);
 }
 
 -(BOOL)isDocumentMessage
@@ -436,7 +455,7 @@
         _delivered = NO;
         _fileMetaKey = nil;
         _groupId = builder.groupId;
-        _source = SOURCE_IOS;
+        _source = AL_SOURCE_IOS;
         _metadata = builder.metadata; // EXAMPLE FOR META DATA
         if(builder.imageFilePath){
         _imageFilePath = builder.imageFilePath.lastPathComponent;
@@ -475,5 +494,35 @@
     return [[ALMessage alloc] initWithBuilder:alMessageBuilder];
 }
 
+-(BOOL)isNotificationDisabled{
+    
+    ALChannel *channel;
+    
+    ALContact *contact;
+    
+    if(self.groupId){
+        
+        ALChannelService *channelService = [[ALChannelService alloc] init];
+        
+        channel =  [channelService getChannelByKey:self.groupId];
+        
+    }else{
+        
+        ALContactDBService *alContactDBService = [[ALContactDBService alloc] init];
+        
+        contact = [alContactDBService loadContactByKey:@"userId" value:self.contactIds];
+        
+    }
+    
+    return (([ALUserDefaultsHandler getNotificationMode] == AL_NOTIFICATION_DISABLE)
+            
+            || (_metadata && ([self isSilentNotification]
+                              
+                              || [self isHiddenMessage]))
+            
+            || (channel && [channel isNotificationMuted])
+            
+            || (contact && [contact isNotificationMuted]));
+}
 
 @end

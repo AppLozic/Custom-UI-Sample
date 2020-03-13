@@ -32,7 +32,7 @@
     [self.mMessageLabel setTextAlignment:NSTextAlignmentCenter];
     [self.mMessageLabel setText:alMessage.message];
     [self.mMessageLabel setBackgroundColor:[UIColor clearColor]];
-    [self.mMessageLabel setTextColor:[UIColor blackColor]];
+    [self.mMessageLabel setTextColor:[ALApplozicSettings getCustomMessageTextColor]];
     [self.mMessageLabel setUserInteractionEnabled:NO];
     
     [self.mDateLabel setHidden:YES];

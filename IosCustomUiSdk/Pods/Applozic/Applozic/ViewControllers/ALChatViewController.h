@@ -20,6 +20,7 @@
 #import "ALAudioAttachmentViewController.h"
 #import "ALVCardClass.h"
 #import <ContactsUI/CNContactPickerViewController.h>
+#import "ALNewContactsViewController.h"
 
 extern NSString * const ThirdPartyDetailVCNotification;
 extern NSString * const ThirdPartyDetailVCNotificationNavigationVC;
@@ -33,7 +34,7 @@ extern NSString * const ThirdPartyDetailVCNotificationChannelKey;
 
 @end
 
-@interface ALChatViewController : ALBaseViewController<UITableViewDataSource,UITableViewDelegate,UIActionSheetDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,ALMapViewControllerDelegate,ALChatCellDelegate,CNContactPickerDelegate>
+@interface ALChatViewController : ALBaseViewController<UITableViewDataSource,UITableViewDelegate,UIActionSheetDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,ALMapViewControllerDelegate,ALChatCellDelegate,CNContactPickerDelegate,ALForwardMessageDelegate>
 
 @property (strong, nonatomic) ALContact * alContact;
 @property (nonatomic, strong) ALChannel * alChannel;
@@ -46,6 +47,8 @@ extern NSString * const ThirdPartyDetailVCNotificationChannelKey;
 @property (strong, nonatomic) ALMessage * alMessage;
 @property (nonatomic, strong) NSString * contactsGroupId;
 
+@property (nonatomic) BOOL isVisible;
+
 
 @property (nonatomic) BOOL refreshMainView;
 @property (nonatomic) BOOL refresh;
@@ -56,10 +59,11 @@ extern NSString * const ThirdPartyDetailVCNotificationChannelKey;
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *tableViewBottomToAttachment;
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *tableViewTop2Constraint;
 
-@property (strong, nonatomic) id <ALChatViewControllerDelegate> chatViewDelegate;
+@property (weak, nonatomic) id <ALChatViewControllerDelegate> chatViewDelegate;
 
 -(void)fetchAndRefresh;
 -(void)fetchAndRefresh:(BOOL)flag;
+-(void)refreshViewOnNotificationTap:(NSString *)userId withChannelKey:(NSNumber *)channelKey withConversationId:(NSNumber *)conversationId;
 
 -(void)updateDeliveryReport:(NSString*)key withStatus:(int)status;
 -(void)updateStatusReportForConversation:(int)status;
@@ -97,5 +101,4 @@ extern NSString * const ThirdPartyDetailVCNotificationChannelKey;
 -(void)unSubscrbingChannel;
 
 -(void)postMessage;
-
 @end

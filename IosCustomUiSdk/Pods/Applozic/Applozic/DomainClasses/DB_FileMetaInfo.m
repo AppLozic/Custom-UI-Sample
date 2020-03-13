@@ -21,5 +21,6 @@
 @dynamic size;
 @dynamic suUserKeyString;
 @dynamic thumbnailUrl;
+@dynamic url;
 
 @end

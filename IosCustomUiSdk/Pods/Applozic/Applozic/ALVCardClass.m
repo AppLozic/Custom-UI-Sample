@@ -8,6 +8,7 @@
 
 #import "ALVCardClass.h"
 #import "ALUtilityClass.h"
+#import "ALPushAssist.h"
 
 @implementation ALVCardClass
 
@@ -98,29 +99,49 @@
     [store executeSaveRequest:saveRequest error:&error];
     
     ALSLog(ALLoggerSeverityError, @"ERROR SAVING_CONTACT (IF ANY) : %@", error.description);
-    
+
+
     if(error)
-    {
-        UIAlertView * alertView = [[UIAlertView alloc] initWithTitle:@"Application Settings"
-                                                             message:@"Enable Contacts Permission"
-                                                            delegate:self
-                                                   cancelButtonTitle:@"Cancel"
-                                                   otherButtonTitles:@"Settings", nil];
-        
-        [alertView show];
+    {   NSString * alertTitle = NSLocalizedStringWithDefaultValue(@"applicationSettings", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Application Settings", @"");
+        NSString * alertMessage = NSLocalizedStringWithDefaultValue(@"permissionPopMessageForContacts", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Enable Contacts Permission", @"");
+        NSString * cancelTitle = NSLocalizedStringWithDefaultValue(@"cancel", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Cancel", @"");
+        NSString * settingTitle = NSLocalizedStringWithDefaultValue(@"settings", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Settings", @"");
+
+
+        UIAlertController * uiAlertController = [UIAlertController
+                                                 alertControllerWithTitle:alertTitle
+                                                 message:alertMessage
+                                                 preferredStyle:UIAlertControllerStyleAlert];
+
+        UIAlertAction* settingButton = [UIAlertAction
+                                        actionWithTitle:settingTitle
+                                        style:UIAlertActionStyleDefault
+                                        handler:^(UIAlertAction * action) {
+                                            [ALUtilityClass openApplicationSettings];
+
+                                        }];
+
+        UIAlertAction* cancelButton = [UIAlertAction
+                                       actionWithTitle:cancelTitle
+                                       style:UIAlertActionStyleDefault
+                                       handler:^(UIAlertAction * action) {
+
+                                       }];
+        [uiAlertController addAction:settingButton];
+        [uiAlertController addAction:cancelButton];
+
+        ALPushAssist* assistant = [[ALPushAssist alloc] init];
+
+        [assistant.topViewController presentViewController:uiAlertController animated:YES completion:nil];
         return;
     }
-    
-    [ALUtilityClass showAlertMessage:@"Contact saved sucessfully" andTitle:@"CONTACT"];
-    
-}
 
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
-{
-    if ([[alertView buttonTitleAtIndex:buttonIndex] isEqualToString:@"Settings"])
-    {
-        [ALUtilityClass openApplicationSettings];
-    }
+
+    NSString * saveContactMessage = NSLocalizedStringWithDefaultValue(@"ContactSaveMessage", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Contact Saved Successfully", @"");
+    NSString * contactTitle = NSLocalizedStringWithDefaultValue(@"contactsTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Contact", @"");
+
+    [ALUtilityClass showAlertMessage:saveContactMessage andTitle:contactTitle];
+    
 }
 
 @end

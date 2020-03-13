@@ -48,14 +48,6 @@
     
 }
 
-- (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation
-{
-    ALSLog(ALLoggerSeverityInfo, @"didUpdateToLocation: %@", newLocation);
-    CLLocation *currentLocation = newLocation;
-    [ self handleLocationUpdate: currentLocation];
-    
-}
-
 - (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations
 {
     
@@ -91,14 +83,14 @@
         
         CLPlacemark *placemark = [placemarks lastObject];
         
-      _addressString = [NSString stringWithFormat:@"%@ %@\n%@ %@\n%@\n%@",
+      self->_addressString = [NSString stringWithFormat:@"%@ %@\n%@ %@\n%@\n%@",
                               placemark.subThoroughfare, placemark.thoroughfare,
                               placemark.postalCode, placemark.locality,
                               placemark.administrativeArea,
                               placemark.country];
         
-        [dict setObject:_addressString forKey:@"address"];
-        [dict setObject:_googleURL forKey:@"googleurl"];
+        [dict setObject:self->_addressString forKey:@"address"];
+        [dict setObject:self->_googleURL forKey:@"googleurl"];
 
         [self.locationDelegate  handleAddress:dict ];
         

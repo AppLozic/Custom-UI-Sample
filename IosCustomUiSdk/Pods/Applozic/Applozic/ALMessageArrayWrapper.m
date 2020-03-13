@@ -70,11 +70,14 @@
     else
     {
         int x = (int)[self.messageArray indexOfObject:almessage];
-        ALMessage *prev = [self.messageArray objectAtIndex:x - 1];
-        ALMessage *next = [self.messageArray objectAtIndex:x + 1];
-        if([prev.type isEqualToString:@"100"] && [next.type isEqualToString:@"100"])
-        {
-            [self.messageArray removeObject:prev];
+        int length = (int)self.messageArray.count;
+        if (x >= 1 && x <= length - 2) {
+            ALMessage *prev = [self.messageArray objectAtIndex:x - 1];
+            ALMessage *next = [self.messageArray objectAtIndex:x + 1];
+            if([prev.type isEqualToString:@"100"] && [next.type isEqualToString:@"100"])
+            {
+                [self.messageArray removeObject:prev];
+            }
         }
         [self.messageArray removeObject:almessage];
     }

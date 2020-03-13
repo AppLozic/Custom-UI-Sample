@@ -33,7 +33,7 @@
 /**
  onUserDetailsUpdate will be called once the user details updated like name, profile imageUrl, status etc.
 
- @param ALUserDetail for user properties.
+ @param userDetail for user properties.
  */
 -(void) onUserDetailsUpdate:(ALUserDetail *) userDetail;
 
@@ -116,6 +116,9 @@
  onMqttConnected will be called once the MQTT is connected
  */
 -(void) onMqttConnected;
+
+-(void)onUserMuteStatus:(ALUserDetail *)userDetail;
+
 @end
 
 @interface ALRealTimeUpdate : NSObject

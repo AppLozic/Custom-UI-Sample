@@ -19,8 +19,6 @@
 
 @interface ALChannelDBService : NSObject
 
--(void)createChannel:(ALChannel *)channel;
-
 -(void)addMemberToChannel:(NSString *)userId andChannelKey:(NSNumber *)channelKey;
 
 -(void)insertChannel:(NSMutableArray *)channelList;
@@ -51,8 +49,6 @@
 
 -(void)updateChannelMetaData:(NSNumber *)channelKey metaData:(NSMutableDictionary *)newMetaData;
 
--(void)createChannelsAndUpdateInfo:(NSMutableArray *)channelArray withDelegate:(id<ApplozicUpdatesDelegate>)delegate;
-
 -(NSMutableArray *)getListOfAllUsersInChannel:(NSNumber *)key;
 //New Added...
 -(NSUInteger)markConversationAsRead:(NSNumber*)channelKey;
@@ -67,6 +63,8 @@
 
 -(BOOL)isChannelDeleted:(NSNumber *)groupId;
 -(BOOL)isConversaionClosed:(NSNumber *)groupId;
+
+-(BOOL)isAdminBroadcastChannel:(NSNumber *)groupId;
 
 -(void) updateChannelParentKey:(NSNumber *)channelKey
               andWithParentKey:(NSNumber *)channelParentKey isAdding:(BOOL)flag;
@@ -86,21 +84,28 @@
 
 -(void)updateMuteAfterTime:(NSNumber*)notificationAfterTime andChnnelKey:(NSNumber*)channelKey;
 
-
 -(DB_CHANNEL_USER_X *)getChannelUserX:(NSNumber *)channelKey;
 
 -(ALChannelUserX *)loadChannelUserX:(NSNumber *)channelKey;
 
 -(ALChannelUserX *)loadChannelUserXByUserId:(NSNumber *)channelKey andUserId:(NSString *)userId;
 
-
 -(void)updateParentKeyInChannelUserX:(NSNumber *)channelKey andWithParentKey:(NSNumber *)parentKey addUserId :(NSString *) userId;
-
 
 -(void)updateRoleInChannelUserX:(NSNumber *)channelKey andUserId:(NSString *)userId withRoleType:(NSNumber*)role;
 
 -(NSMutableArray *)getListOfAllUsersInChannelByNameForContactsGroup:(NSString *)channelName;
 
 -(DB_CHANNEL *)getContactsGroupChannelByName:(NSString *)channelName;
+-(NSMutableArray *) getGroupUsersInChannel:(NSNumber *)key;
+
+-(void)fetchChannelMembersAsyncWithChannelKey:(NSNumber*)channelKey witCompletion:(void(^)(NSMutableArray *membersArray))completion;
+
+-(void) getUserInSupportGroup:(NSNumber *) channelKey withCompletion:(void(^)(NSString *userId)) completion;
+
+
+-(DB_CHANNEL_USER_X *)createChannelUserXEntity:(ALChannelUserX *)channelUserX  withContext:(NSManagedObjectContext *) context;
+
+-(void)deleteMembers:(NSNumber *)key;
 
 @end

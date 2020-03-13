@@ -27,7 +27,7 @@
     [self.mMessageLabel setTextAlignment:NSTextAlignmentCenter];
     [self.mMessageLabel setBackgroundColor:[UIColor clearColor]];
     [self.mMessageLabel setLineBreakMode:NSLineBreakByCharWrapping];
-    [self.mMessageLabel setTextColor:[UIColor whiteColor]];
+    [self.mMessageLabel setTextColor:[ALApplozicSettings getCustomMessageTextColor]];
     [self.mMessageLabel setUserInteractionEnabled:NO];
     NSString *textMsg = [alMessage getVOIPMessageText];
    
@@ -59,7 +59,7 @@
     CGRect frame = CGRectMake(theTextPoint.x, theTextPoint.y,
                               bubbleWidth, theTextSize.height + (2 * padding));
     
-    self.mBubleImageView.backgroundColor = [UIColor lightGrayColor];
+    self.mBubleImageView.backgroundColor = [ALApplozicSettings getCustomMessageBackgroundColor];
     [self.mBubleImageView setFrame:frame];
     [self.mBubleImageView setHidden:NO];
     

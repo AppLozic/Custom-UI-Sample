@@ -130,10 +130,10 @@
 -(void)buildAndShowNotificationWithcompletionHandler:(void (^)(BOOL))handler
 {
 
-    if([ALUserDefaultsHandler getNotificationMode] == NOTIFICATION_DISABLE || (self.alMessageObject.metadata && ([self.alMessageObject isSilentNotification] || [self.alMessageObject isHiddenMessage])))
-       {
-           return;
-       }
+    if([self.alMessageObject isNotificationDisabled])
+    {
+        return;
+    }
     
     NSString * title; // Title of Notification Banner (Display Name or Group Name)
     NSString * subtitle = self.text; //Message to be shown
@@ -227,7 +227,7 @@
 -(void)buildAndShowNotification:(id)delegate
 {
     
-    if([ALUserDefaultsHandler getNotificationMode] == NOTIFICATION_DISABLE || (self.alMessageObject.metadata && ([self.alMessageObject isSilentNotification] || [self.alMessageObject isHiddenMessage])))
+    if([self.alMessageObject isNotificationDisabled])
     {
         return;
     }
@@ -331,7 +331,7 @@
                      self.groupId = nil;
                  }
                  ALSLog(ALLoggerSeverityInfo, @"onTopMessageVC: ContactID %@ and ChannelID %@",self.contactId, self.groupId);
-                 [class2 createDetailChatViewController:_contactId];
+                 [class2 createDetailChatViewControllerWithMessage:self.alMessageObject];
                  self.checkContactId = [NSString stringWithFormat:@"%@",self.contactId];
              }
              else if([delegate isKindOfClass:[ALChatViewController class]] && top.isChatViewOnTop)
@@ -448,11 +448,11 @@
     else
     {
         class1.conversationId = nil;
-        class1.contactIds=self.contactId;
-        [class1 reloadView];
-        [class1 markConversationRead];
-        [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
     }
+    class1.contactIds=self.contactId;
+    [class1 reloadView];
+    [class1 markConversationRead];
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
     
 }
 

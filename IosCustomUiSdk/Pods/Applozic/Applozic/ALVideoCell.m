@@ -8,51 +8,40 @@
 
 #import "ALVideoCell.h"
 #import "UIImageView+WebCache.h"
-#import <MediaPlayer/MediaPlayer.h>
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "ALMessageInfoViewController.h"
 #import "ALChatViewController.h"
+#import <AVKit/AVKit.h>
+
 
 // Constants
-#define MT_INBOX_CONSTANT "4"
-#define MT_OUTBOX_CONSTANT "5"
-#define DATE_LABEL_SIZE 12
+static CGFloat const BUBBLE_PADDING_X = 13;
+static CGFloat const BUBBLE_PADDING_WIDTH = 120;
+static CGFloat const BUBBLE_PADDING_HEIGHT = 160;
 
-#define BUBBLE_PADDING_X 13
-#define BUBBLE_PADDING_Y 00
-#define BUBBLE_PADDING_WIDTH 120
-#define BUBBLE_PADDING_HEIGHT 160
-#define BUBBLE_PADDING_HEIGHT_GRP 130
+static CGFloat const CHANNEL_PADDING_X = 5;
+static CGFloat const CHANNEL_PADDING_Y = 2;
+static CGFloat const CHANNEL_PADDING_HEIGHT = 20;
 
-#define CHANNEL_PADDING_X 5
-#define CHANNEL_PADDING_Y 2
-#define CHANNEL_PADDING_WIDTH 30
-#define CHANNEL_PADDING_HEIGHT 20
+static CGFloat const IMAGE_VIEW_PADDING_X = 5;
+static CGFloat const IMAGE_VIEW_PADDING_Y = 5;
+static CGFloat const IMAGE_VIEW_WIDTH = 10;
+static CGFloat const IMAGE_VIEW_HEIGHT = 10;
 
-#define IMAGE_VIEW_PADDING_X 5
-#define IMAGE_VIEW_PADDING_Y 5
-#define IMAGE_VIEW_WIDTH 10
-#define IMAGE_VIEW_HEIGHT 10
-#define IMAGE_VIEW_HEIGHT_GRP 30
+static CGFloat const DATE_PADDING_WIDTH = 20;
+static CGFloat const DATE_HEIGHT = 20;
+static CGFloat const DATE_WIDTH = 80;
 
-#define DATE_PADDING_X 20
-#define DATE_PADDING_WIDTH 20
-#define DATE_HEIGHT 20
-#define DATE_WIDTH 80
+static CGFloat const MSG_STATUS_WIDTH = 20;
+static CGFloat const MSG_STATUS_HEIGHT = 20;
 
-#define MSG_STATUS_WIDTH 20
-#define MSG_STATUS_HEIGHT 20
-#define SIZE_HEIGHT 20
+static CGFloat const DOWNLOAD_RETRY_X = 45;
+static CGFloat const DOWNLOAD_RETRY_Y = 20;
 
-#define DOC_NAME_PADDING_X 5
-#define DOC_NAME_PADDING_Y 0
-#define DOC_NAME_PADDING_WIDTH 20
-#define DOC_NAME_HEIGHT 60
-
-#define DOWNLOAD_RETRY_X 45
-#define DOWNLOAD_RETRY_Y 20
-#define DOWNLOAD_RETRY_PADDING_WIDTH 10
-#define DOWNLOAD_RETRY_PADDING_HEIGHT 10
+static CGFloat const USER_PROFILE_PADDING_X = 5;
+static CGFloat const USER_PROFILE_PADDING_X_OUTBOX = 50;
+static CGFloat const USER_PROFILE_WIDTH = 45;
+static CGFloat const USER_PROFILE_HEIGHT = 45;
 
 @implementation ALVideoCell
 {
@@ -136,7 +125,7 @@
     [self.mUserProfileImageView addGestureRecognizer:tapForOpenChat];
     
     
-    if([alMessage.type isEqualToString:@MT_INBOX_CONSTANT])
+    if([alMessage isReceivedMessage])
     {
         
         self.mBubleImageView.backgroundColor = [ALApplozicSettings getReceiveMsgColor];
@@ -167,7 +156,7 @@
         {
             [self.mChannelMemberName setHidden:NO];
             [self.mChannelMemberName setText:receiverName];
-            [self.mChannelMemberName setTextColor: [ALColorUtility getColorForAlphabet:receiverName]];
+            [self.mChannelMemberName setTextColor: [ALColorUtility getColorForAlphabet:receiverName colorCodes:self.alphabetiColorCodesDictionary]];
             self.mChannelMemberName.frame = CGRectMake(self.mBubleImageView.frame.origin.x + CHANNEL_PADDING_X,
                                                        self.mBubleImageView.frame.origin.y + CHANNEL_PADDING_Y,
                                                        self.mBubleImageView.frame.size.width , CHANNEL_PADDING_HEIGHT);
@@ -227,7 +216,7 @@
         {
             [self.mUserProfileImageView sd_setImageWithURL:[NSURL URLWithString:@""] placeholderImage:nil options:SDWebImageRefreshCached];
             [self.mNameLabel setHidden:NO];
-            self.mUserProfileImageView.backgroundColor = [ALColorUtility getColorForAlphabet:receiverName];
+            self.mUserProfileImageView.backgroundColor = [ALColorUtility getColorForAlphabet:receiverName colorCodes:self.alphabetiColorCodesDictionary];
         }
         
         [self.mDowloadRetryButton setFrame:CGRectMake(self.mImageView.frame.origin.x + self.mImageView.frame.size.width/2.0 - DOWNLOAD_RETRY_X,
@@ -359,9 +348,19 @@
     
     if(alMessage.imageFilePath != nil && alMessage.fileMeta.blobKey)
     {
-        NSString * docDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-        NSString * filePath = [docDir stringByAppendingPathComponent:alMessage.imageFilePath];
-        self.videoFileURL = [NSURL fileURLWithPath:filePath];
+
+        NSURL *documentDirectory =  [ALUtilityClass getApplicationDirectoryWithFilePath:alMessage.imageFilePath];
+        NSString *filePath = documentDirectory.path;
+
+        if([[NSFileManager defaultManager] fileExistsAtPath:filePath]){
+            self.videoFileURL  = [NSURL fileURLWithPath:filePath];
+        }else{
+            NSURL *appGroupDirectory =  [ALUtilityClass getAppsGroupDirectoryWithFilePath:alMessage.imageFilePath];
+            if(appGroupDirectory){
+                self.videoFileURL  = [NSURL fileURLWithPath:appGroupDirectory.path];
+            }
+        }
+
         [self.mImageView addGestureRecognizer:self.tapper];
         [self.videoPlayFrontView setHidden:NO];
         [self setVideoThumbnail:filePath];
@@ -382,7 +381,7 @@
     self.imageWithText.text = alMessage.message;
     self.mDateLabel.text = theDate;
     
-    if ([alMessage.type isEqualToString:@MT_OUTBOX_CONSTANT]) {
+    if ([alMessage isSentMessage] && ((self.channel && self.channel.type != OPEN) || self.contact)) {
         
         self.mMessageStatusImageView.hidden = NO;
         NSString * imageName;
@@ -411,25 +410,25 @@
 
 
 -(void) proccessTapForMenu:(id)tap{
-    
+
     [self processKeyBoardHideTap];
 
     UIMenuItem * messageForward = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"forwardOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Forward", @"") action:@selector(messageForward:)];
     UIMenuItem * messageReply = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"replyOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Reply", @"") action:@selector(messageReply:)];
-    
-    if ([self.mMessage.type isEqualToString:@MT_INBOX_CONSTANT]){
-        
-        [[UIMenuController sharedMenuController] setMenuItems: @[messageForward,messageReply]];
-        
-    }else if ([self.mMessage.type isEqualToString:@MT_OUTBOX_CONSTANT]){
 
-        
+    if ([self.mMessage.type isEqualToString:AL_IN_BOX]){
+
+        [[UIMenuController sharedMenuController] setMenuItems: @[messageForward,messageReply]];
+
+    }else if ([self.mMessage.type isEqualToString:AL_OUT_BOX]){
+
+
         UIMenuItem * msgInfo = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"infoOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Info", @"") action:@selector(msgInfo:)];
-        
+
         [[UIMenuController sharedMenuController] setMenuItems: @[msgInfo,messageReply,messageForward]];
     }
     [[UIMenuController sharedMenuController] update];
-    
+
 }
 
 
@@ -463,11 +462,9 @@
 
 -(void)videoFullScreen:(UITapGestureRecognizer *)sender
 {
-    MPMoviePlayerViewController * videoViewController = [[MPMoviePlayerViewController alloc] initWithContentURL:self.videoFileURL];
-    [videoViewController.moviePlayer setFullscreen:YES];
-    [videoViewController.moviePlayer setScalingMode: MPMovieScalingModeAspectFit];
-    
-    [self.delegate showVideoFullScreen:videoViewController];
+    AVPlayerViewController * avPlayerViewController = [[AVPlayerViewController alloc] init];
+    avPlayerViewController.player = [AVPlayer playerWithURL:self.videoFileURL];
+    [self.delegate showVideoFullScreen:avPlayerViewController];
 }
 
 -(void) cancelAction
@@ -495,7 +492,7 @@
     }
     
     
-    if([self.mMessage.type isEqualToString:@MT_OUTBOX_CONSTANT] && self.mMessage.groupId)
+    if([self.mMessage isSentMessage] && self.mMessage.groupId)
     {
         return (self.mMessage.isDownloadRequired? (action == @selector(delete:) || action == @selector(msgInfo:)):(action == @selector(delete:)|| action == @selector(msgInfo:)||  [self isForwardMenuEnabled:action]  || [self isMessageReplyMenuEnabled:action] ) );
     }

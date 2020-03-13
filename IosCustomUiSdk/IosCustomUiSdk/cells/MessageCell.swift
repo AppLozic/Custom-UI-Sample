@@ -103,7 +103,6 @@ public class MessageCell: UITableViewCell {
     }()
 
 
-
     private func setupConstraints() {
 
         self.addViewsForAutolayout(views: [avatarImageView, nameLabel,messageText,lineView,voipButton, avatarName,badgeNumberView, timeLabel,onlineStatusView])

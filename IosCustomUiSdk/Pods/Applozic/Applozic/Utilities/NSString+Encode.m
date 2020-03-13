@@ -10,21 +10,7 @@
 
 @implementation NSString (Encode)
 
--(NSString *)urlEncodeUsingEncoding:(NSStringEncoding)encoding {
-    return (NSString *)CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(NULL,
-                                                                                 (CFStringRef)self,
-                                                                                 NULL,
-                                                                                 (CFStringRef)@"!*'\"();:@&=+$,/?%#[]% ",
-                                                                                 CFStringConvertNSStringEncodingToEncoding(encoding)));
+-(NSString *)urlEncodeUsingNSUTF8StringEncoding {
+    return [self stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
 }
-
-
--(NSString *)urlEncodeUsingNSUTF8StringEncoding{
-    return (NSString *)CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(NULL,
-                                                                                 (CFStringRef)self,
-                                                                                 NULL,
-                                                                                 (CFStringRef)@"!*'\"();:@&=+$,/?%#[]% ",
-                                                                                 CFStringConvertNSStringEncodingToEncoding(NSUTF8StringEncoding)));
-}
-
 @end

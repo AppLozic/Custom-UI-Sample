@@ -154,6 +154,10 @@ static NSInteger		UA__maxLogsRetained			= 200;
 }
 	
 + (BOOL)loggingEnabled {
+    /// Remove logging from release mode
+    if ([ALLogger isProduction]) {
+        return NO;
+    }
 	// True if...
 	return ([ALLogger usingSeverityFiltering]) ||								// Using severity filtering OR							// severity filtering is done in the logWithVerbosity:severity:formatArgs method
 	(![ALLogger isProduction] && [ALLogger shouldLogInDebug]) ||			// Debug and logging is enabled in debug OR
@@ -215,7 +219,8 @@ static NSInteger		UA__maxLogsRetained			= 200;
                 
                 // pop excess logs
                 if ([logArray count] > UA__maxLogsRetained) {
-                    logArray = [[logArray subarrayWithRange:NSMakeRange(0, UA__maxLogsRetained)] mutableCopy];
+                    [logArray removeObjectsInRange:
+                     NSMakeRange(UA__maxLogsRetained, [logArray count] - UA__maxLogsRetained)];
                 }
                 
             }
@@ -275,16 +280,20 @@ static NSInteger		UA__maxLogsRetained			= 200;
     return logArray;
 }
 
-+ (BOOL) saveLogArray {
++ (void) saveLogArray {
+    /// Simply return if logging is disabled
+    if (![ALLogger loggingEnabled]) {
+        return;
+    }
     NSMutableArray *logArray = [self logArray];
     NSString *logArrayFilepath = [self logArrayFilepath];
-    return [logArray writeToFile:logArrayFilepath atomically:YES];
+    [logArray writeToFile:logArrayFilepath atomically:YES];
 }
 
 + (NSString *) logArrayFilepath {
     NSArray *folders = [[NSFileManager defaultManager] URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask];
     NSURL *libraryDir = [folders objectAtIndex:0];
-    return [libraryDir.path stringByAppendingPathComponent:@"ALLogger_log.txt"];
+    return [libraryDir.path stringByAppendingPathComponent:@"ApplozicLogs.txt"];
 }
 
 + (NSString *) logArrayAsString {

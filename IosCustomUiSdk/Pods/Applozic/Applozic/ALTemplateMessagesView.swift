@@ -20,7 +20,7 @@ import Foundation
     
    @objc  open var viewModel: ALTemplateMessagesViewModel!
 
-    @objc   open let collectionView: UICollectionView = {
+    @objc   public let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         let cv = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)

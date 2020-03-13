@@ -9,24 +9,12 @@ class LoginViewController: UIViewController {
     
     @IBOutlet weak var emailId: UITextField!
     var  applozicClient = ApplozicClient()
-    
-    
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        
+
         applozicClient = ApplozicClient(applicationKey: "applozic-sample-app") as ApplozicClient //Pass applicationKey here
-        // Do any additional setup after loading the view.
-        ALUserDefaultsHandler.setUserAuthenticationTypeId(1) // APPLOZIC
-        
     }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
     
     @IBAction func getStartedBtn(_ sender: AnyObject) {
         
@@ -40,7 +28,7 @@ class LoginViewController: UIViewController {
         }
         alUser.userId = self.userName.text
         ALUserDefaultsHandler.setUserId(alUser.userId)
-        
+        ALUserDefaultsHandler.setUserAuthenticationTypeId(1) // APPLOZIC
         print("userName:: " , alUser.userId)
         if(!((emailId.text?.isEmpty)!)){
             alUser.email = emailId.text
@@ -56,7 +44,6 @@ class LoginViewController: UIViewController {
     
     private func registerUserToApplozic(alUser: ALUser) {
         
-        
         if ALUserDefaultsHandler.isLoggedIn() {
             applozicClient.logoutUser { (error, response) in
                 
@@ -71,16 +58,16 @@ class LoginViewController: UIViewController {
         
     }
     
-    public func login(alUser: ALUser){
-        applozicClient = ApplozicClient(applicationKey: "applozic-sample-app") as ApplozicClient //Pass applicationKey here
+    public func login(alUser: ALUser) {
+        applozicClient = ApplozicClient(applicationKey: "applozic-sample-app") as ApplozicClient //Pass
         applozicClient.loginUser(alUser) { (response, error) in
             
-            if(error == nil){
-                
+            if (error == nil) {
                 let conversationVC = ConversationListViewController();
                 let nav = ALKBaseNavigationViewController(rootViewController: conversationVC)
-                self.present(nav, animated: false, completion: nil)
-            }else{
+                nav.modalPresentationStyle = .fullScreen
+                self.present(nav, animated: true, completion: nil)
+            } else {
                 NSLog("[REGISTRATION] Applozic user registration error: %@", error.debugDescription)
                 
             }

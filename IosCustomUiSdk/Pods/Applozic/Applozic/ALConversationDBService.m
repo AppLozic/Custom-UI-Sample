@@ -13,6 +13,10 @@
 
 -(void)insertConversationProxy:(NSMutableArray *)proxyArray
 {
+    if(proxyArray == nil || !proxyArray.count ){
+        return;
+    }
+
     ALDBHandler *theDBHandler = [ALDBHandler sharedInstance];
     
     for(ALConversationProxy *proxy in proxyArray){

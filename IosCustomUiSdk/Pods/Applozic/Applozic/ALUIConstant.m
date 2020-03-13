@@ -27,7 +27,7 @@
     CGSize theTextSize = [ALUtilityClass getSizeForText:theMessage.message
                                                maxWidth:cellFrame.size.width - 115
                                                    font:[ALApplozicSettings getFontFace]
-                                               fontSize:MESSAGE_TEXT_SIZE];
+                                               fontSize:[ALApplozicSettings getChatCellTextFontSize]];
     
     return theTextSize;
 }
@@ -54,9 +54,9 @@
     return HEIGHT;
 }
 
-+(CGFloat)getContactCellHeight
++(CGFloat)getContactCellHeight:(ALMessage*)message
 {
-    CGFloat HEIGHT = 265;
+    CGFloat HEIGHT = (message.isSentMessage && ALApplozicSettings.isAddContactButtonForSenderDisabled) ? 210 : 265;
     return HEIGHT;
 }
 
@@ -89,6 +89,37 @@
     
     return HEIGHT;
 }
+
+
++(CGFloat)getLinkCelllHeight:(ALMessage *)alMessage andCellFrame:(CGRect)cellFrame
+{
+
+    CGFloat cellPadding = 70;
+    CGFloat widthPadding = 115;
+
+    CGFloat HEIGHT = cellFrame.size.width - cellPadding;
+    NSString *linkText = nil;
+
+    if([alMessage.metadata valueForKey:@"text"]){
+        linkText = [alMessage.metadata valueForKey:@"text"];
+    }else{
+        linkText = [alMessage.metadata valueForKey:@"linkURL"];
+    }
+
+    if(linkText)
+    {
+
+        CGSize theTextSize =   [ALUtilityClass getSizeForText:linkText
+                                                     maxWidth:cellFrame.size.width - widthPadding
+                                                         font:[ALApplozicSettings getFontFace]
+                                                     fontSize:[ALApplozicSettings getChatCellTextFontSize]];
+
+        HEIGHT = theTextSize.height + HEIGHT;
+    }
+
+    return HEIGHT;
+}
+
 
 +(CGFloat)getChatCellHeight:(ALMessage *)alMessage andCellFrame:(CGRect)cellFrame  // NEED CHECK AGAIN TEXT CELL
 {
@@ -126,8 +157,8 @@
 {
     CGSize theTextSize = [ALUtilityClass getSizeForText:alMessage.message
                                                maxWidth:cellFrame.size.width - 115
-                                                   font:@"Helvetica"
-                                               fontSize:CH_MESSAGE_TEXT_SIZE];
+                                                   font:[ALApplozicSettings getCustomMessageFont]
+                                               fontSize:[ALApplozicSettings getChannelCellTextFontSize]];
     
     CGFloat HEIGHT = theTextSize.height + 30;    
     return HEIGHT;
@@ -142,6 +173,10 @@
     if(alMessage.contentType == ALMESSAGE_CONTENT_LOCATION)
     {
         heightOfCell = [self getLocationCellHeight:cellFrame];
+    }
+    else if([alMessage isLinkMessage])
+    {
+        heightOfCell = [self getLinkCelllHeight:alMessage andCellFrame:cellFrame] ;
     }
     else if([alMessage.type isEqualToString:@"100"])
     {
@@ -180,7 +215,7 @@
     }
     else if (alMessage.contentType == (short)ALMESSAGE_CONTENT_VCARD)
     {
-        heightOfCell = [self getContactCellHeight];
+        heightOfCell = [self getContactCellHeight:alMessage];
     }
     else
     {

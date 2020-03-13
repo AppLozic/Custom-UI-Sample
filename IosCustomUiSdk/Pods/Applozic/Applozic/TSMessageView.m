@@ -50,8 +50,8 @@ static NSMutableDictionary *_notificationDesign;
 @property (nonatomic, assign) CGFloat textSpaceLeft;
 @property (nonatomic, assign) CGFloat textSpaceRight;
 
-@property (copy) void (^callback)();
-@property (copy) void (^buttonCallback)();
+@property (copy) void (^callback)(void);
+@property (copy) void (^buttonCallback)(void);
 
 - (CGFloat)updateHeightOfMessageView;
 - (void)layoutSubviews;
@@ -195,9 +195,9 @@ static NSMutableDictionary *_notificationDesign;
                type:(TSMessageNotificationType)aNotificationType
            duration:(CGFloat)duration
    inViewController:(UIViewController *)viewController
-           callback:(void (^)())callback
+           callback:(void (^)(void))callback
         buttonTitle:(NSString *)buttonTitle
-     buttonCallback:(void (^)())buttonCallback
+     buttonCallback:(void (^)(void))buttonCallback
          atPosition:(TSMessageNotificationPosition)position
 canBeDismissedByUser:(BOOL)dismissingEnabled
 {
@@ -214,7 +214,8 @@ canBeDismissedByUser:(BOOL)dismissingEnabled
         self.callback = callback;
         self.buttonCallback = buttonCallback;
 
-        CGFloat screenWidth = self.viewController.view.bounds.size.width;
+        CGSize screenSize = [UIScreen mainScreen].bounds.size;
+        CGFloat screenWidth = screenSize.width;
         CGFloat padding = [self padding];
 
         NSDictionary *current;
@@ -467,7 +468,8 @@ canBeDismissedByUser:(BOOL)dismissingEnabled
 - (CGFloat)updateHeightOfMessageView
 {
     CGFloat currentHeight;
-    CGFloat screenWidth = self.viewController.view.bounds.size.width;
+    CGSize screenSize = [UIScreen mainScreen].bounds.size;
+    CGFloat screenWidth = screenSize.width;
     CGFloat padding = [self padding];
     CGFloat topPadding = padding;
 

@@ -6,14 +6,14 @@
 //  Copyright © 2016 applozic Inc. All rights reserved.
 //
 
-#define AL_CREATE_GROUP_MESSAGE @"CREATE_GROUP_MESSAGE"
-#define AL_REMOVE_MEMBER_MESSAGE @"REMOVE_MEMBER_MESSAGE"
-#define AL_ADD_MEMBER_MESSAGE @"ADD_MEMBER_MESSAGE"
-#define AL_JOIN_MEMBER_MESSAGE @"JOIN_MEMBER_MESSAGE"
-#define AL_GROUP_NAME_CHANGE_MESSAGE @"GROUP_NAME_CHANGE_MESSAGE"
-#define AL_GROUP_ICON_CHANGE_MESSAGE @"GROUP_ICON_CHANGE_MESSAGE"
-#define AL_GROUP_LEFT_MESSAGE @"GROUP_LEFT_MESSAGE"
-#define AL_DELETED_GROUP_MESSAGE @"DELETED_GROUP_MESSAGE"
+static NSString *const AL_CREATE_GROUP_MESSAGE = @"CREATE_GROUP_MESSAGE";
+static NSString *const AL_REMOVE_MEMBER_MESSAGE = @"REMOVE_MEMBER_MESSAGE";
+static NSString *const AL_ADD_MEMBER_MESSAGE = @"ADD_MEMBER_MESSAGE";
+static NSString *const AL_JOIN_MEMBER_MESSAGE = @"JOIN_MEMBER_MESSAGE";
+static NSString *const AL_GROUP_NAME_CHANGE_MESSAGE = @"GROUP_NAME_CHANGE_MESSAGE";
+static NSString *const AL_GROUP_ICON_CHANGE_MESSAGE = @"GROUP_ICON_CHANGE_MESSAGE";
+static NSString *const AL_GROUP_LEFT_MESSAGE = @"GROUP_LEFT_MESSAGE";
+static NSString *const AL_DELETED_GROUP_MESSAGE = @"DELETED_GROUP_MESSAGE";
 
 #import <Foundation/Foundation.h>
 #import "ALChannelFeed.h"
@@ -23,9 +23,15 @@
 #import "ALChannelSyncResponse.h"
 #import "AlChannelFeedResponse.h"
 #import "ALRealTimeUpdate.h"
-
+#import "ALChannelInfo.h"
 
 @interface ALChannelService : NSObject
+
+extern NSString *const AL_CHANNEL_MEMBER_SAVE_STATUS;
+extern NSString *const AL_Updated_Group_Members;
+extern NSString *const AL_CHANNEL_MEMBER_CALL_COMPLETED;
+extern NSString *const AL_MESSAGE_LIST;
+extern NSString *const AL_MESSAGE_SYNC;
 
 +(ALChannelService *)sharedInstance;
 
@@ -106,12 +112,11 @@
 
  Types of the group. PRIVATE = 1,PUBLIC = 2, OPEN = 6
 
- @param metadata extra information you can pass in metadata if you required some other place.
+ @param metaData extra information you can pass in metadata if you required some other place.
 
  @param completion if error is nil then group is created successfully it has ALChannel infomration of channel else some error while creating if error is not nil.
  */
--(void)createChannel:(NSString *)channelName orClientChannelKey:(NSString *)clientChannelKey andMembersList:(NSMutableArray *)memberArray
-        andImageLink:(NSString *)imageLink channelType:(short)type andMetaData:(NSMutableDictionary *)metaData
+-(void)createChannel:(NSString *)channelName orClientChannelKey:(NSString *)clientChannelKey andMembersList:(NSMutableArray *)memberArray andImageLink:(NSString *)imageLink channelType:(short)type andMetaData:(NSMutableDictionary *)metaData
       withCompletion:(void(^)(ALChannel *alChannel, NSError *error))completion;
 
 
@@ -396,7 +401,7 @@
 /**
  This method is used to remove the child keys from parent channelKey where it was added to the parent
 
- @param clientChildKeyList NSMutableArray list of child channelKeys to the parent you want to remove from parentKey
+ @param childKeyList NSMutableArray list of child channelKeys to the parent you want to remove from parentKey
 
  @param parentKey Pass the parent channelKey.
  @param completion if error is nil then its removed successfully.
@@ -408,7 +413,7 @@
 /**
  This method is used to add child keys to client Parent Key.
 
- @param childKeyList NSMutableArray list of client child channelKeys to the parent you want to add
+ @param clientChildKeyList NSMutableArray list of client child channelKeys to the parent you want to add
  @param clientParentKey Pass the client parent channelKey.
  @param completion if an error is nil then its added successfully.
  */
@@ -638,5 +643,10 @@
  */
 
 -(void)updateConversationReadWithGroupId:(NSNumber *)channelKey withDelegate: (id<ApplozicUpdatesDelegate>)delegate;
+
+
+-(void)createChannelWithChannelInfo:(ALChannelInfo*)channelInfo withCompletion:(void(^)(ALChannelCreateResponse *response, NSError *error))completion;
+
+-(void)createChannelEntry:(ALChannel*)channel fromMessageList:(BOOL) isFromMessageList;
 
 @end

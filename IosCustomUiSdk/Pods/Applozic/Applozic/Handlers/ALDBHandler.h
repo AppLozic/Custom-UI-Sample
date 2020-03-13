@@ -11,6 +11,7 @@
 #import "DB_CONTACT.h"
 
 @class ALContact;
+static NSString *const AL_SQLITE_FILE_NAME = @"AppLozic.sqlite";
 
 @interface ALDBHandler : NSObject
 
@@ -21,6 +22,8 @@
 @property (readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 
 @property (strong, nonatomic) NSPersistentContainer *persistentContainer;
+
+- (NSManagedObjectContext *)privateContext;
 
 - (void)saveContext;
 
@@ -44,4 +47,6 @@
 
 - (ALContact *)loadContactByKey:(NSString *) key value:(NSString*) value;
 
+- (void)savePrivateAndMainContext:(NSManagedObjectContext*)context
+                        completion:(void (^)(NSError*error))completion;
 @end

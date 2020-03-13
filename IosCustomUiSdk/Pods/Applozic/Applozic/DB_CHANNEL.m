@@ -24,5 +24,6 @@
 @dynamic notificationAfterTime;
 @dynamic deletedAtTime;
 @dynamic metadata;
+@dynamic category;
 
 @end

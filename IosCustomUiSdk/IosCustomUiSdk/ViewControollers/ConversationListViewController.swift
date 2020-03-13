@@ -12,7 +12,7 @@ import MessageKit
 import MapKit
 import Applozic
 
-public class ConversationListViewController: UIViewController, UITableViewDelegate, ApplozicUpdatesDelegate, UITableViewDataSource {
+public class ConversationListViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
 
     let appDelegate: AppDelegate? = UIApplication.shared.delegate as? AppDelegate
 
@@ -31,8 +31,6 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
     var allMessages = [ALMessage]()
 
-    var applozicClient = ApplozicClient();
-
     public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return allMessages.count
     }
@@ -41,7 +39,7 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
         let cell: MessageCell = tableView.dequeueReusableCell(withIdentifier: "MessageCell", for: indexPath) as! MessageCell
 
-        guard let alMessage = allMessages[indexPath.row] as? ALMessage else {
+        guard let alMessage = allMessages[indexPath.row] as? ALMessage  else {
             return UITableViewCell()
         }
 
@@ -52,7 +50,7 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
     open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 
-        guard let alMessage = allMessages[indexPath.row] as? ALMessage else {
+        guard let alMessage = allMessages[indexPath.row] as? ALMessage  else {
             return
         }
 
@@ -67,55 +65,40 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
         self.navigationController?.pushViewController(viewController, animated: true)
     }
 
-
-
     public override func viewWillAppear(_ animated: Bool) {
-
+        super.viewWillAppear(animated)
         self.setupView()
-        addObserver()
-
     }
 
     public override func viewDidAppear(_ animated: Bool) {
-
+        super.viewDidAppear(animated)
         activityIndicator.center = CGPoint(x: view.bounds.size.width/2, y: view.bounds.size.height/2)
         activityIndicator.color = UIColor.gray
         view.addSubview(activityIndicator)
         self.view.bringSubview(toFront: activityIndicator)
         self.activityIndicator.startAnimating()
-
-        applozicClient = ApplozicClient.init(applicationKey: "applozic-sample-app", with: self)
-        applozicClient.subscribeToConversation()
+        appDelegate?.applozicClient.subscribeToConversation()
         self.loadMessages()
     }
 
     func loadMessages()  {
 
-        if(self.allMessages.count>0){
+        if (self.allMessages.count>0) {
             self.allMessages.removeAll()
         }
 
-        applozicClient.getLatestMessages(false, withCompletionHandler: { messageList, error in
+        appDelegate?.applozicClient.getLatestMessages(false, withCompletionHandler: { messageList, error in
             if error == nil {
-                self.allMessages = messageList as! [ALMessage];
+
+                guard let list = messageList else {
+                    return
+                }
+                self.allMessages = list as! [ALMessage];
                 self.activityIndicator.stopAnimating()
                 self.tableView.reloadData()
 
             }
         })
-
-    }
-
-    func addObserver()  {
-
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: "reloadTable"), object: nil, queue: nil, using: {[weak self]
-            (notification) in
-
-            guard self != nil else { return }
-
-            self?.loadMessages()
-        })
-
     }
 
     private func setupView() {
@@ -148,7 +131,6 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
     }
 
-
     @objc func logout() {
 
         let registerUserClientService: ALRegisterUserClientService = ALRegisterUserClientService()
@@ -167,7 +149,6 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
         }
     }
 
-
     func addViewsForAutolayout(views: [UIView]) {
         for view in views {
             view.translatesAutoresizingMaskIntoConstraints = false
@@ -175,16 +156,9 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
         }
     }
 
-
     public override func viewWillDisappear(_ animated: Bool) {
-        applozicClient.unsubscribeToConversation()
+        appDelegate?.applozicClient.unsubscribeToConversation()
     }
-
-
-    deinit {
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "reloadTable"), object: nil)
-    }
-
 
     public func onMessageReceived(_ alMessage: ALMessage!) {
 
@@ -202,9 +176,6 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
     }
 
     public func onMessageDelivered(_ message: ALMessage!) {
-
-
-
     }
 
     public func onMessageDeleted(_ messageKey: String!) {
@@ -217,55 +188,43 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
     public func onConversationDelete(_ userId: String!, withGroupId groupId: NSNumber!) {
 
-
-
     }
 
     public func conversationRead(byCurrentUser userId: String!, withGroupId groupId: NSNumber!) {
-        //  NotificationCenter.default.post(name: Notification.Name(rawValue: "Unread_Conversation_Read"), object: infoDict)
 
     }
 
     public func onUpdateTypingStatus(_ userId: String!, status: Bool) {
-        //    NotificationCenter.default.post(name: Notification.Name(rawValue: "GenericRichListButtonSelected"), object: infoDict)
 
     }
 
     public func onUpdateLastSeen(atStatus alUserDetail: ALUserDetail!) {
-        // NotificationCenter.default.post(name: Notification.Name(rawValue: "Online_Status_Update"), object: alUserDetail)
 
     }
 
     public func onUserBlockedOrUnBlocked(_ userId: String!, andBlockFlag flag: Bool) {
-        //    NotificationCenter.default.post(name: Notification.Name(rawValue: "GenericRichListButtonSelected"), object: infoDict)
 
     }
 
     public func onChannelUpdated(_ channel: ALChannel!) {
-        //NotificationCenter.default.post(name: Notification.Name(rawValue: "Channel_Info_Sync"), object: channel)
 
     }
 
     public func onAllMessagesRead(_ userId: String!) {
 
-        //  NotificationCenter.default.post(name: Notification.Name(rawValue: "All_Messages_Read"), object: userId)
-
     }
 
     public func onMqttConnectionClosed() {
-
-        applozicClient.subscribeToConversation()
-
+        appDelegate?.applozicClient.subscribeToConversation()
     }
 
     public func onMqttConnected() {
 
     }
 
-
     public func addMessage(_ alMessage: ALMessage) {
 
-        if(alMessage.type != nil && alMessage.type  != OUT_BOX && !alMessage.isMsgHidden()){
+        if(alMessage.type != nil && alMessage.type  != AL_OUT_BOX && !alMessage.isMsgHidden()){
             appDelegate?.sendLocalPush(message: alMessage)
         }
 

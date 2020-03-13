@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0930"
+   LastUpgradeVersion = "1100"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,10 +14,10 @@
             buildForArchiving = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "56A0EB9D6D7478317F1FEC41847895BA"
+               BlueprintIdentifier = "265267BFB461FF858BE5536317C28B2C"
+               BuildableName = "Applozic.framework"
                BlueprintName = "Applozic"
-               ReferencedContainer = "container:Pods.xcodeproj"
-               BuildableName = "Applozic.framework">
+               ReferencedContainer = "container:Pods.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>

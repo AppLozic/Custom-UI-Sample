@@ -2,7 +2,7 @@
 // MQTTCFSocketDecoder.m
 // MQTTClient.framework
 //
-// Copyright © 2013-2016, Christoph Krey
+// Copyright © 2013-2017, Christoph Krey. All rights reserved.
 //
 
 #import "MQTTCFSocketDecoder.h"
@@ -20,15 +20,12 @@
     self.state = MQTTCFSocketDecoderStateInitializing;
     
     self.stream = nil;
-    self.runLoop = [NSRunLoop currentRunLoop];
-    self.runLoopMode = NSRunLoopCommonModes;
     return self;
 }
 
 - (void)open {
     if (self.state == MQTTCFSocketDecoderStateInitializing) {
-        [self.stream setDelegate:self];
-        [self.stream scheduleInRunLoop:self.runLoop forMode:self.runLoopMode];
+        (self.stream).delegate = self;
         [self.stream open];
     }
 }
@@ -39,20 +36,18 @@
 
 - (void)close {
     [self.stream close];
-    [self.stream removeFromRunLoop:self.runLoop forMode:self.runLoopMode];
     [self.stream setDelegate:nil];
 }
 
-- (void)stream:(NSStream*)sender handleEvent:(NSStreamEvent)eventCode {
-    
+- (void)stream:(NSStream *)sender handleEvent:(NSStreamEvent)eventCode {
     if (eventCode & NSStreamEventOpenCompleted) {
-        ALSLog(ALLoggerSeverityInfo, @"[MQTTCFSocketDecoder] NSStreamEventOpenCompleted");
+        DDLogVerbose(@"[MQTTCFSocketDecoder] NSStreamEventOpenCompleted");
         self.state = MQTTCFSocketDecoderStateReady;
         [self.delegate decoderDidOpen:self];
     }
     
-    if (eventCode &  NSStreamEventHasBytesAvailable) {
-        ALSLog(ALLoggerSeverityInfo, @"[MQTTCFSocketDecoder] NSStreamEventHasBytesAvailable");
+    if (eventCode & NSStreamEventHasBytesAvailable) {
+        DDLogVerbose(@"[MQTTCFSocketDecoder] NSStreamEventHasBytesAvailable");
         if (self.state == MQTTCFSocketDecoderStateInitializing) {
             self.state = MQTTCFSocketDecoderStateReady;
         }
@@ -67,25 +62,25 @@
                 [self.delegate decoder:self didFailWithError:nil];
             } else {
                 NSData *data = [NSData dataWithBytes:buffer length:n];
-                ALSLog(ALLoggerSeverityInfo, @"[MQTTCFSocketDecoder] received (%lu)=%@...", (unsigned long)data.length,
+                DDLogVerbose(@"[MQTTCFSocketDecoder] received (%lu)=%@...", (unsigned long)data.length,
                              [data subdataWithRange:NSMakeRange(0, MIN(256, data.length))]);
                 [self.delegate decoder:self didReceiveMessage:data];
             }
         }
     }
-    if (eventCode &  NSStreamEventHasSpaceAvailable) {
-        ALSLog(ALLoggerSeverityInfo, @"[MQTTCFSocketDecoder] NSStreamEventHasSpaceAvailable");
+    if (eventCode & NSStreamEventHasSpaceAvailable) {
+        DDLogVerbose(@"[MQTTCFSocketDecoder] NSStreamEventHasSpaceAvailable");
     }
     
-    if (eventCode &  NSStreamEventEndEncountered) {
-        ALSLog(ALLoggerSeverityInfo, @"[MQTTCFSocketDecoder] NSStreamEventEndEncountered");
+    if (eventCode & NSStreamEventEndEncountered) {
+        DDLogVerbose(@"[MQTTCFSocketDecoder] NSStreamEventEndEncountered");
         self.state = MQTTCFSocketDecoderStateInitializing;
         self.error = nil;
         [self.delegate decoderdidClose:self];
     }
     
-    if (eventCode &  NSStreamEventErrorOccurred) {
-        ALSLog(ALLoggerSeverityInfo, @"[MQTTCFSocketDecoder] NSStreamEventErrorOccurred");
+    if (eventCode & NSStreamEventErrorOccurred) {
+        DDLogVerbose(@"[MQTTCFSocketDecoder] NSStreamEventErrorOccurred");
         self.state = MQTTCFSocketDecoderStateError;
         self.error = self.stream.streamError;
         [self.delegate decoder:self didFailWithError:self.error];

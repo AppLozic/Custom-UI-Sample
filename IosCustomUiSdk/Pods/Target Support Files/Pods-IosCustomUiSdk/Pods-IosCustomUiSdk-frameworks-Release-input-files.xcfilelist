@@ -1,0 +1,5 @@
+${PODS_ROOT}/Target Support Files/Pods-IosCustomUiSdk/Pods-IosCustomUiSdk-frameworks.sh
+${BUILT_PRODUCTS_DIR}/Applozic/Applozic.framework
+${BUILT_PRODUCTS_DIR}/Kingfisher/Kingfisher.framework
+${BUILT_PRODUCTS_DIR}/MessageKit/MessageKit.framework
+${BUILT_PRODUCTS_DIR}/SDWebImage/SDWebImage.framework

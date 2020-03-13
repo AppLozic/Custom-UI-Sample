@@ -16,7 +16,7 @@
 {
    self = [super initWithJSONString:JSONString];
     
-    if([super.status isEqualToString: RESPONSE_SUCCESS])
+    if([super.status isEqualToString: AL_RESPONSE_SUCCESS])
     {
         NSDictionary *JSONDictionary = [JSONString valueForKey:@"response"];
         self.alChannel = [[ALChannel alloc] initWithDictonary:JSONDictionary];

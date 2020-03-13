@@ -6,10 +6,6 @@
 //  Copyright © 2016 applozic Inc. All rights reserved.
 //
 
-#define MT_INBOX_CONSTANT "4"
-#define MT_OUTBOX_CONSTANT "5"
-#define DATE_LABEL_SIZE 12
-
 #import "ALLocationCell.h"
 #import "Applozic.h"
 #import "UIImageView+WebCache.h"
@@ -100,7 +96,7 @@
     CELL_WIDTH = viewSize.width - 120;
     CELL_HEIGHT = viewSize.width - 220;
     
-    if([alMessage.type isEqualToString:@MT_INBOX_CONSTANT])
+    if([alMessage isReceivedMessage])
     {
         [self.contentView bringSubviewToFront:self.mChannelMemberName];
         
@@ -127,7 +123,7 @@
         
         if( alMessage.groupId )
         {
-            [self.mChannelMemberName setTextColor: [ALColorUtility getColorForAlphabet:receiverName]];
+            [self.mChannelMemberName setTextColor: [ALColorUtility getColorForAlphabet:receiverName colorCodes:self.alphabetiColorCodesDictionary]];
             [self.mChannelMemberName setText:receiverName];
             [self.mChannelMemberName setHidden:NO];
             self.mChannelMemberName.frame = CGRectMake(self.mBubleImageView.frame.origin.x + 5,
@@ -172,7 +168,7 @@
         {
             [self.mUserProfileImageView sd_setImageWithURL:[NSURL URLWithString:@""] placeholderImage:nil options:SDWebImageRefreshCached];
             [self.mNameLabel setHidden:NO];
-            self.mUserProfileImageView.backgroundColor = [ALColorUtility getColorForAlphabet:receiverName];
+            self.mUserProfileImageView.backgroundColor = [ALColorUtility getColorForAlphabet:receiverName colorCodes:self.alphabetiColorCodesDictionary];
         }
         
 
@@ -215,31 +211,34 @@
     
         self.mMessageStatusImageView.hidden = NO;
         NSString * imageName;
-        
-        switch (alMessage.status.intValue)
-        {
-            case DELIVERED_AND_READ :
+
+
+        if(((self.channel && self.channel.type != OPEN) || self.contact)){
+
+            switch (alMessage.status.intValue)
             {
-                imageName = @"ic_action_read.png";
+                case DELIVERED_AND_READ :
+                {
+                    imageName = @"ic_action_read.png";
+                }
+                    break;
+                case DELIVERED:
+                {
+                    imageName = @"ic_action_message_delivered.png";
+                }
+                    break;
+                case SENT:
+                {
+                    imageName = @"ic_action_message_sent.png";
+                }
+                    break;
+                default:
+                {
+                    imageName = @"ic_action_about.png";
+                }
+                    break;
             }
-            break;
-            case DELIVERED:
-            {
-                imageName = @"ic_action_message_delivered.png";
-            }
-            break;
-            case SENT:
-            {
-                imageName = @"ic_action_message_sent.png";
-            }
-            break;
-            default:
-            {
-                imageName = @"ic_action_about.png";
-            }
-            break;
         }
-        
         
         self.mMessageStatusImageView.image = [ALUtilityClass getImageFromFramworkBundle:imageName];
     }
@@ -275,29 +274,28 @@
 }
 
 
-
 #pragma mark - Menu option tap Method -
 
 -(void) proccessTapForMenu:(id)tap{
-    
+
     [self processKeyBoardHideTap];
 
     UIMenuItem * messageForward = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"forwardOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Forward", @"") action:@selector(messageForward:)];
     UIMenuItem * messageReply = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"replyOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Reply", @"") action:@selector(messageReply:)];
-    
-    if ([self.mMessage.type isEqualToString:@MT_INBOX_CONSTANT]){
-        
-        [[UIMenuController sharedMenuController] setMenuItems: @[messageForward,messageReply]];
-        
-    }else if ([self.mMessage.type isEqualToString:@MT_OUTBOX_CONSTANT]){
 
-        
+    if ([self.mMessage.type isEqualToString:AL_IN_BOX]){
+
+        [[UIMenuController sharedMenuController] setMenuItems: @[messageForward,messageReply]];
+
+    }else if ([self.mMessage.type isEqualToString:AL_OUT_BOX]){
+
+
         UIMenuItem * msgInfo = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"infoOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Info", @"") action:@selector(msgInfo:)];
-        
+
         [[UIMenuController sharedMenuController] setMenuItems: @[msgInfo,messageReply,messageForward]];
     }
     [[UIMenuController sharedMenuController] update];
-    
+
 }
 
 
@@ -361,7 +359,7 @@
             }
         }
         
-    if([self.mMessage.type isEqualToString:@MT_OUTBOX_CONSTANT] && self.mMessage.groupId)
+    if([self.mMessage isSentMessage] && self.mMessage.groupId)
     {
         return (self.mMessage.isDownloadRequired? (action == @selector(delete:) || action == @selector(msgInfo:)):(action == @selector(delete:)|| action == @selector(msgInfo:)|| [self isForwardMenuEnabled:action] || [self isMessageReplyMenuEnabled:action]) );
     }
@@ -444,6 +442,12 @@
 {
     return ([ALApplozicSettings isReplyOptionEnabled] && action == @selector(messageReply:));
     
+}
+
+-(void)processOpenChat
+{
+    [self processKeyBoardHideTap];
+    [self.delegate openUserChat:self.mMessage];
 }
 
 @end

@@ -5,7 +5,6 @@
 //  Copyright (c) 2015 AppLozic. All rights reserved.
 //
 
-#define DATE_LABEL_SIZE 12
 
 #import "ALChatCell.h"
 #import "ALUtilityClass.h"
@@ -22,36 +21,32 @@
 #import "ALMessageClientService.h"
 
 // Constants
-#define MT_INBOX_CONSTANT "4"
-#define MT_OUTBOX_CONSTANT "5"
+static CGFloat const DATE_LABEL_SIZE = 12;
+static CGFloat const USER_PROFILE_PADDING_X = 5;
+static CGFloat const USER_PROFILE_WIDTH = 45;
+static CGFloat const USER_PROFILE_HEIGHT = 45;
 
-#define USER_PROFILE_PADDING_X 5
-#define USER_PROFILE_WIDTH 45
-#define USER_PROFILE_HEIGHT 45
+static CGFloat const BUBBLE_PADDING_WIDTH = 20;
+static CGFloat const BUBBLE_PADDING_X_OUTBOX = 27;
+static CGFloat const BUBBLE_PADDING_HEIGHT = 20;
 
-#define BUBBLE_PADDING_X 13
-#define BUBBLE_PADDING_WIDTH 20
-#define BUBBLE_PADDING_X_OUTBOX 27
-#define BUBBLE_PADDING_HEIGHT 20
-#define BUBBLE_PADDING_HEIGHT_GRP 35
+static CGFloat const MESSAGE_PADDING_X = 10;
+static CGFloat const MESSAGE_PADDING_Y = 10;
+static CGFloat const MESSAGE_PADDING_Y_GRP = 5;
 
-#define MESSAGE_PADDING_X 10
-#define MESSAGE_PADDING_Y 10
-#define MESSAGE_PADDING_Y_GRP 5
-#define MESSAGE_PADDING_WIDTH 20
-#define MESSAGE_PADDING_HEIGHT 20
+static CGFloat const CHANNEL_PADDING_X = 10;
+static CGFloat const CHANNEL_PADDING_Y = 2;
+static CGFloat const CHANNEL_PADDING_WIDTH = 100;
+static CGFloat const CHANNEL_PADDING_HEIGHT = 20;
 
-#define CHANNEL_PADDING_X 10
-#define CHANNEL_PADDING_Y 2
-#define CHANNEL_PADDING_WIDTH 100
-#define CHANNEL_PADDING_HEIGHT 20
+static CGFloat const DATE_PADDING_X = 20;
+static CGFloat const DATE_PADDING_WIDTH = 20;
+static CGFloat const DATE_HEIGHT = 20;
 
-#define DATE_PADDING_X 20
-#define DATE_PADDING_WIDTH 20
-#define DATE_HEIGHT 20
+static CGFloat const MSG_STATUS_WIDTH = 20;
+static CGFloat const MSG_STATUS_HEIGHT = 20;
 
-#define MSG_STATUS_WIDTH 20
-#define MSG_STATUS_HEIGHT 20
+static NSString *const DEFAULT_FONT_NAME = @"Helvetica-Bold";
 
 @implementation ALChatCell
 {
@@ -111,7 +106,7 @@
             fontName = DEFAULT_FONT_NAME;
         }
         
-        self.mMessageLabel.font = [self getDynamicFontWithDefaultSize:MESSAGE_TEXT_SIZE fontName:[ALApplozicSettings getFontFace]];
+        self.mMessageLabel.font = [self getDynamicFontWithDefaultSize:[ALApplozicSettings getChatCellTextFontSize] fontName:[ALApplozicSettings getFontFace]];
         self.mMessageLabel.textColor = [UIColor grayColor];
         [self.contentView addSubview:self.mMessageLabel];
         
@@ -174,11 +169,8 @@
         defaultFont = [UIFont systemFontOfSize:size];
     }
     
-    if ([ALApplozicSettings getChatCellFontTextStyle]) {
-        if (@available(iOS 11.0, *)) {
-            UIFontMetrics *fontMetrics = [UIFontMetrics metricsForTextStyle:[ALApplozicSettings getChatCellFontTextStyle]];
-            return [fontMetrics scaledFontForFont:defaultFont];
-        } else if (@available(iOS 10.0, *)) {
+    if ([ALApplozicSettings getChatCellFontTextStyle] && [ALApplozicSettings isTextStyleInCellEnabled]) {
+        if (@available(iOS 10.0, *)) {
             return [UIFont preferredFontForTextStyle:[ALApplozicSettings getChatCellFontTextStyle]];
         }
     }
@@ -230,7 +222,7 @@
     {
         [self dateTextSetupForALMessage:alMessage withViewSize:viewSize andTheTextSize:theTextSize];
     }
-    else if ([alMessage.type isEqualToString:@MT_INBOX_CONSTANT])
+    else if ([alMessage.type isEqualToString:AL_IN_BOX])
     {
         [self.contentView bringSubviewToFront:self.mChannelMemberName];
         
@@ -277,7 +269,7 @@
         {
             [self.mChannelMemberName setHidden:NO];
             
-            [self.mChannelMemberName setTextColor: [ALColorUtility getColorForAlphabet:receiverName]];
+            [self.mChannelMemberName setTextColor: [ALColorUtility getColorForAlphabet:receiverName colorCodes:self.colourDictionary]];
             
             if(theTextSize.width < receiverNameSize.width)
             {
@@ -349,7 +341,7 @@
         {
             [self.mUserProfileImageView sd_setImageWithURL:[NSURL URLWithString:@""] placeholderImage:nil options:SDWebImageRefreshCached];
             [self.mNameLabel setHidden:NO];
-            self.mUserProfileImageView.backgroundColor = [ALColorUtility getColorForAlphabet:receiverName];
+            self.mUserProfileImageView.backgroundColor = [ALColorUtility getColorForAlphabet:receiverName colorCodes:self.colourDictionary];
         }
     }
     else    //Sent Message
@@ -426,8 +418,8 @@
         
     }
     
-    if ([alMessage.type isEqualToString:@MT_OUTBOX_CONSTANT] && (alMessage.contentType != ALMESSAGE_CHANNEL_NOTIFICATION)) {
-        
+    if ([alMessage isSentMessage] && ![alMessage isChannelContentTypeMessage] && ((self.channel && self.channel.type != OPEN) || self.contact)) {
+
         self.mMessageStatusImageView.hidden = NO;
         NSString * imageName;
         
@@ -462,7 +454,7 @@
     
     /*    ====================================== END =================================  */
     
-    self.mMessageLabel.font = [self getDynamicFontWithDefaultSize:MESSAGE_TEXT_SIZE fontName:[ALApplozicSettings getFontFace]];
+    self.mMessageLabel.font = [self getDynamicFontWithDefaultSize:[ALApplozicSettings getChatCellTextFontSize] fontName:[ALApplozicSettings getFontFace]];
     if(alMessage.contentType == ALMESSAGE_CONTENT_TEXT_HTML)
     {
         
@@ -500,22 +492,22 @@
 -(void) proccessTapForMenu:(id)tap{
 
     [self processKeyBoardHideTap];
-    
+
      UIMenuItem * messageForward = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"forwardOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Forward", @"") action:@selector(messageForward:)];
        UIMenuItem * messageReply = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"replyOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Reply", @"") action:@selector(messageReply:)];
-    
-    if ([self.mMessage.type isEqualToString:@MT_INBOX_CONSTANT]){
-       
+
+    if ([self.mMessage.type isEqualToString:AL_IN_BOX]){
+
         [[UIMenuController sharedMenuController] setMenuItems: @[messageForward,messageReply]];
 
-    }else if ([self.mMessage.type isEqualToString:@MT_OUTBOX_CONSTANT]){
-       
+    }else if ([self.mMessage.type isEqualToString:AL_OUT_BOX]){
+
         UIMenuItem * msgInfo = [[UIMenuItem alloc] initWithTitle:NSLocalizedStringWithDefaultValue(@"infoOptionTitle", [ALApplozicSettings getLocalizableName],[NSBundle mainBundle], @"Info", @"") action:@selector(msgInfo:)];
-        
+
         [[UIMenuController sharedMenuController] setMenuItems: @[msgInfo,messageReply,messageForward]];
     }
        [[UIMenuController sharedMenuController] update];
-    
+
 }
 
 -(void)dateTextSetupForALMessage:(ALMessage *)alMessage withViewSize:(CGSize)viewSize andTheTextSize:(CGSize)theTextSize
@@ -552,7 +544,7 @@
         }
     }
     
-    if([self.mMessage.type isEqualToString:@MT_OUTBOX_CONSTANT] && self.mMessage.groupId)
+    if([self.mMessage isSentMessage] && self.mMessage.groupId)
     {
         return (self.mMessage.isDownloadRequired? (action == @selector(delete:) || action == @selector(msgInfo:) || action == @selector(copy:)) : (action == @selector(delete:)|| action == @selector(msgInfo:)|| [self isForwardMenuEnabled:action]  || [self isMessageReplyMenuEnabled:action] || action == @selector(copy:)));
     }
@@ -736,11 +728,11 @@
     if(self.mBubleImageView.frame.size.width> replyWidthRequired )
     {
         replyWidthRequired = (self.mBubleImageView.frame.size.width);
-        ALSLog(ALLoggerSeverityInfo, @" replyWidthRequired is less from parent one : %d", replyWidthRequired);
+        ALSLog(ALLoggerSeverityInfo, @" replyWidthRequired is less from parent one : %f", replyWidthRequired);
     }
     else
     {
-        ALSLog(ALLoggerSeverityInfo, @" replyWidthRequired is grater from parent one : %d", replyWidthRequired);
+        ALSLog(ALLoggerSeverityInfo, @" replyWidthRequired is grater from parent one : %f", replyWidthRequired);
         
     }
     
@@ -784,7 +776,7 @@
         [v removeFromSuperview];
     }
     
-    [self.replyParentView setBackgroundColor:[UIColor redColor]];
+    [self.replyParentView setBackgroundColor:[ALApplozicSettings getBackgroundColorForReplyView]];
     [self.replyUIView populateUI:almessage withSuperView:self.replyParentView];
     [self.replyParentView addSubview:self.replyUIView];
     

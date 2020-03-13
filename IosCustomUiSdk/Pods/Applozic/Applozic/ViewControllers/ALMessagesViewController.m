@@ -5,11 +5,14 @@
 //  Copyright (c) 2015 AppLozic. All rights reserved.
 //
 
-#define NAVIGATION_TEXT_SIZE 20
-#define USER_NAME_LABEL_SIZE 18
-#define MESSAGE_LABEL_SIZE 14
-#define TIME_LABEL_SIZE 12
-#define IMAGE_NAME_LABEL_SIZE 14
+static const CGFloat NAVIGATION_TEXT_SIZE = 20;
+static const CGFloat USER_NAME_LABEL_SIZE = 18;
+static const CGFloat MESSAGE_LABEL_SIZE = 14;
+static const CGFloat TIME_LABEL_SIZE = 12;
+static const CGFloat IMAGE_NAME_LABEL_SIZE = 14;
+static const int LAUNCH_GROUP_OF_TWO = 4;
+static const int REGULAR_CONTACTS = 0;
+static const int BROADCAST_GROUP_CREATION = 5;
 
 #import "UIView+Toast.h"
 #import "TSMessageView.h"
@@ -45,11 +48,12 @@
 #import "ALGroupCreationViewController.h"
 #import "ALMessageClientService.h"
 #import "ALLogger.h"
+#import "ALNotificationHelper.h"
 
 // Constants
-#define DEFAULT_TOP_LANDSCAPE_CONSTANT -34
-#define DEFAULT_TOP_PORTRAIT_CONSTANT -64
-#define MQTT_MAX_RETRY 3
+static CGFloat const DEFAULT_TOP_LANDSCAPE_CONSTANT = 34;
+static CGFloat const DEFAULT_TOP_PORTRAIT_CONSTANT = 64;
+static int const MQTT_MAX_RETRY = 3;
 
 //==============================================================================================================================================
 // Private interface
@@ -77,7 +81,7 @@
 @property (nonatomic, strong) NSNumber *unreadCount;
 @property (strong, nonatomic) UILabel *emptyConversationText;
 @property (strong, nonatomic) ALMQTTConversationService *alMqttConversationService;
-
+@property (strong, nonatomic)  NSMutableDictionary *colourDictionary;
 @property (strong, nonatomic) UIBarButtonItem *barButtonItem;
 @property (strong, nonatomic) UIBarButtonItem *refreshButton;
 
@@ -137,7 +141,9 @@
     if((self.channelKey || self.userIdToLaunch)){
         [self createAndLaunchChatView ];
     }
-    
+    [_mTableView setBackgroundColor:[ALApplozicSettings getMessagesViewBackgroundColour]];
+    [_navigationRightButton setTintColor:[ALApplozicSettings getColorForNavigationItem]];
+    self.colourDictionary = [ALApplozicSettings getUserIconFirstNameColorCodes];
 }
 
 -(void)loadMessages:(NSNotification *)notification
@@ -202,12 +208,11 @@
                                                  name:@"Update_channel_Info" object:nil];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateLastSeenAtStatusPUSH:) name:@"update_USER_STATUS" object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appEntersForegroundIntoListView:) name:@"appCameInForeground" object:nil];
+
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(loadMessages:) name:@"CONVERSATION_DELETION" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateCallForUser:) name:@"USER_DETAILS_UPDATE_CALL" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didUpdateBroadCastMessages) name:@"BROADCAST_MSG_UPDATE" object:nil];
      [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateConversationUnreadCount:) name:@"Update_unread_count" object:nil];
-    
     
     [self.navigationController.navigationBar setTitleTextAttributes: @{
                                                                        NSForegroundColorAttributeName:[UIColor whiteColor],
@@ -245,6 +250,8 @@
 // Channel details update notification
 -(void)updateChannelSync:(NSNotification*)notification {
     ALChannel *channel =  notification.object;
+    ALChannelService * channelService = [[ALChannelService alloc]init];
+    channel =  [channelService getChannelByKey:channel.key];
     if(channel){
         ALContactCell *contactCell = [self getCellForGroup:channel.key];
         if(contactCell){
@@ -277,10 +284,11 @@
 {
     [super viewDidAppear:animated];
     
-    self.detailChatViewController.contactIds = nil;
-    self.detailChatViewController.channelKey = nil;
-    self.detailChatViewController.conversationId = nil;
-    
+    self.userIdToLaunch = nil;
+    self.channelKey = nil;
+    if(self.detailChatViewController){
+        self.detailChatViewController.isVisible = NO;
+    }
     if([self.mActivityIndicator isAnimating])
     {
         [self.emptyConversationText setHidden:YES];
@@ -306,7 +314,7 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self name:NEW_MESSAGE_NOTIFICATION object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"BROADCAST_MSG_UPDATE" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"Update_unread_count" object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
 }
 
 //==============================================================================================================================================
@@ -319,15 +327,6 @@
     self.navigationController.navigationBar.layer.shadowOffset = CGSizeMake(0, 0);
     self.navigationController.navigationBar.layer.shadowRadius = 10;
     self.navigationController.navigationBar.layer.masksToBounds = NO;
-}
-
-//==============================================================================================================================================
-#pragma mark - END
-//==============================================================================================================================================
-
--(void)appEntersForegroundIntoListView:(id)sender
-{
-    [self callLastSeenStatusUpdate];
 }
 
 -(void)emptyConversationAlertLabel
@@ -656,7 +655,8 @@
             [newBtn setTitle:NSLocalizedStringWithDefaultValue(@"createGroupOptionTitle", [ALApplozicSettings getLocalizableName], [NSBundle mainBundle], @"Create Group", @"")
                     forState:UIControlStateNormal];
             [newBtn sizeToFit];
-            
+            [newBtn setTitleColor:[ALApplozicSettings getMessageListTextColor] forState:UIControlStateNormal];
+
            // Add group button.....
             UIButton *newBroadCast = (UIButton*)[contactCell viewWithTag:102];
             [newBroadCast addTarget:self action:@selector(createBroadcastGroup:) forControlEvents:UIControlEventTouchUpInside];
@@ -668,7 +668,8 @@
             
             newBroadCast.userInteractionEnabled = [ALApplozicSettings isBroadcastGroupEnable];
             [newBroadCast setHidden:![ALApplozicSettings isBroadcastGroupEnable]];
-            
+            [newBroadCast setTitleColor:[ALApplozicSettings getMessageListTextColor] forState:UIControlStateNormal];
+
         }break;
 
         case 1:
@@ -690,19 +691,19 @@
                  
                  contactCell.mUserImageView.layer.cornerRadius = contactCell.mUserImageView.frame.size.width/2;
                  contactCell.mUserImageView.layer.masksToBounds = YES;
-                 contactCell.mUserImageView.contentMode = UIViewContentModeScaleAspectFit;
              });
 
             [contactCell.onlineImageMarker setBackgroundColor:[UIColor clearColor]];
-            
-            UILabel* nameIcon = (UILabel*)[contactCell viewWithTag:102];
-            nameIcon.textColor = [UIColor whiteColor];
 
             ALMessage *message = (ALMessage *)self.mContactsMessageListArray[indexPath.row];
             
             ALContactDBService *contactDBService = [[ALContactDBService alloc] init];
             ALContact *alContact = [contactDBService loadContactByKey:@"userId" value: message.to];
-            
+
+            contactCell.mUserNameLabel.textColor = [ALApplozicSettings getMessageListTextColor];
+            contactCell.mTimeLabel.textColor = [ALApplozicSettings getMessageSubtextColour];
+            contactCell.mMessageLabel.textColor = [ALApplozicSettings getMessageSubtextColour];
+
             if([message.groupId intValue])
             {
                 ALChannelService *channelService = [[ALChannelService alloc] init];
@@ -713,8 +714,7 @@
             }
             else
             {
-                contactCell.mUserNameLabel.text = [alContact getDisplayName];
-                [self updateProfileImageAndUnreadCount:contactCell WithChannel:nil orChannelId:alContact];
+                 [self updateProfileImageAndUnreadCount:contactCell WithChannel:nil orChannelId:alContact];
 
             }
 
@@ -737,7 +737,7 @@
         default:
             break;
     }
-    
+    [contactCell setBackgroundColor:[ALApplozicSettings getMessagesViewBackgroundColour]];
     return contactCell;
 }
 
@@ -752,7 +752,7 @@
     nameIcon.textColor = [UIColor whiteColor];
 
     ALContactService * contactService = [ALContactService new];
-    contactCell.mUserImageView.backgroundColor = [UIColor whiteColor];
+    contactCell.mUserImageView.backgroundColor = [UIColor clearColor];
     if(alChannel)
     {
         
@@ -773,7 +773,7 @@
             {
                 nameIcon.hidden = NO;
                 [contactCell.mUserImageView sd_setImageWithURL:[NSURL URLWithString:@""] placeholderImage:nil options:SDWebImageRefreshCached];
-                contactCell.mUserImageView.backgroundColor = [ALColorUtility getColorForAlphabet:[grpContact getDisplayName]];
+                contactCell.mUserImageView.backgroundColor = [ALColorUtility getColorForAlphabet:[grpContact getDisplayName] colorCodes: self.colourDictionary];
                 [nameIcon setText:[ALColorUtility getAlphabetForProfileImage:[grpContact getDisplayName]]];
             }
             
@@ -815,7 +815,7 @@
         {
             nameIcon.hidden = NO;
             [contactCell.mUserImageView sd_setImageWithURL:[NSURL URLWithString:@""] placeholderImage:nil options:SDWebImageRefreshCached];
-            contactCell.mUserImageView.backgroundColor = [ALColorUtility getColorForAlphabet:[contact getDisplayName]];
+            contactCell.mUserImageView.backgroundColor = [ALColorUtility getColorForAlphabet:[contact getDisplayName] colorCodes:self.colourDictionary];
             [nameIcon setText:[ALColorUtility getAlphabetForProfileImage:[contact getDisplayName]]];
         }
     }
@@ -889,7 +889,10 @@
             contactCell.imageMarker.hidden = YES;
             contactCell.mMessageLabel.hidden = NO;
         }
-        
+        UIColor *subTextColour = [ALApplozicSettings getMessageSubtextColour];
+        contactCell.imageNameLabel.textColor = subTextColour;
+        contactCell.mMessageLabel.textColor = subTextColour;
+        contactCell.imageMarker.tintColor = subTextColour;
     }
     else if (message.contentType == AV_CALL_CONTENT_THREE)
     {
@@ -945,30 +948,32 @@
 }
 
 -(void)createDetailChatViewControllerWithMessage:(ALMessage *)message
-{   
+{
+    [self createDetailChatViewControllerWithUserId:message.contactIds withGroupId:message.groupId withConversationId:message.conversationId];
+}
+
+-(void)createDetailChatViewControllerWithUserId:(NSString *)contactId withGroupId:(NSNumber *)groupId withConversationId:(NSNumber *)conversationId {
+
     if(!(self.detailChatViewController))
     {
         self.detailChatViewController = [self.storyboard instantiateViewControllerWithIdentifier:@"ALChatViewController"];
     }
-    
-    if(message.conversationId)
-    {
-        self.detailChatViewController.conversationId = message.conversationId;
-    }
-    
+
+    self.detailChatViewController.conversationId = conversationId;
+
     if([ALApplozicSettings isContactsGroupEnabled ] && _contactsGroupId)
     {
         [ALApplozicSettings setContactsGroupId:_contactsGroupId];
     }
-    
-    if(message.groupId)
+
+    if(groupId)
     {
-        self.detailChatViewController.channelKey = message.groupId;
+        self.detailChatViewController.channelKey = groupId;
         self.detailChatViewController.contactIds = nil;
-        
+
         ALChannelService *channelService = [[ALChannelService alloc] init];
-        ALChannel *alChannel = [channelService getChannelByKey:message.groupId];
-       
+        ALChannel *alChannel = [channelService getChannelByKey:groupId];
+
         if(alChannel.type == GROUP_OF_TWO)
         {
             NSString* contactId = [alChannel getReceiverIdInGroupOfTwo];
@@ -979,11 +984,18 @@
     }
     else
     {
-        self.detailChatViewController.contactIds = message.contactIds;
+        self.detailChatViewController.channelKey = nil;
+        self.detailChatViewController.contactIds = contactId;
     }
-    
+
     self.detailChatViewController.chatViewDelegate = self;
-    [self.navigationController pushViewController:self.detailChatViewController animated:YES];
+
+    ALPushAssist * pushAssist = [[ALPushAssist alloc]init];
+
+    if(![pushAssist.topViewController isKindOfClass:ALChatViewController.class]){
+        [self.navigationController pushViewController:self.detailChatViewController animated:YES];
+    }
+
 }
 
 -(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -1035,8 +1047,6 @@
         
         if([channelService isChannelLeft:[alMessageobj getGroupId]])
         {
-            NSArray * filteredArray = [self.mContactsMessageListArray filteredArrayUsingPredicate:
-                                       [NSPredicate predicateWithFormat:@"groupId = %@",[alMessageobj getGroupId]]];
             
             [self.dBService deleteAllMessagesByContact:nil orChannelKey:[alMessageobj getGroupId]];
             [ALChannelService setUnreadCountZeroForGroupID:[alMessageobj getGroupId]];
@@ -1116,11 +1126,11 @@
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone &&
         (toOrientation == UIInterfaceOrientationLandscapeLeft || toOrientation == UIInterfaceOrientationLandscapeRight))
     {
-        self.mTableViewTopConstraint.constant = DEFAULT_TOP_LANDSCAPE_CONSTANT;
+        self.mTableViewTopConstraint.constant = - DEFAULT_TOP_LANDSCAPE_CONSTANT;
     }
     else
     {
-        self.mTableViewTopConstraint.constant = DEFAULT_TOP_PORTRAIT_CONSTANT;
+        self.mTableViewTopConstraint.constant = - DEFAULT_TOP_PORTRAIT_CONSTANT;
     }
     [self.view layoutIfNeeded];
 }
@@ -1170,7 +1180,7 @@
             {
                 nameIcon.hidden = NO;
                 [contactCell.mUserImageView sd_setImageWithURL:[NSURL URLWithString:@""] placeholderImage:nil options:SDWebImageRefreshCached];
-                contactCell.mUserImageView.backgroundColor = [ALColorUtility getColorForAlphabet:[userDetail getDisplayName]];
+                contactCell.mUserImageView.backgroundColor = [ALColorUtility getColorForAlphabet:[userDetail getDisplayName] colorCodes:self.colourDictionary];
             }
             [self.detailChatViewController setRefresh:YES];
         }
@@ -1197,26 +1207,30 @@
 -(void)syncCall:(ALMessage *)alMessage andMessageList:(NSMutableArray *)messageArray
 {
     ALPushAssist* top = [[ALPushAssist alloc] init];
+    ALNotificationHelper * helper = [[ALNotificationHelper alloc]init];
+
     [self.detailChatViewController setRefresh: YES];
     
-    if ([self.detailChatViewController contactIds] != nil || [self.detailChatViewController channelKey] != nil)
-    {
+    if ([self.detailChatViewController isVisible]) {
         [self.detailChatViewController syncCall:alMessage updateUI:[NSNumber numberWithInt:APP_STATE_ACTIVE] alertValue:alMessage.message];
-    }
-    else if (top.isMessageViewOnTop && (![alMessage.type isEqualToString:@"5"]))
-    {
-        [self updateMessageList:messageArray];
-        
-        if ((alMessage.groupId && [ALChannelService isChannelMuted:alMessage.groupId]) || [alMessage isMsgHidden])
-        {
+    } else if ([helper isApplozicViewControllerOnTop]) {
+
+        if (top.isMessageViewOnTop) {
+            [self updateMessageList:messageArray];
+        }
+
+        if ([alMessage isSentMessage] || (alMessage.groupId && [ALChannelService isChannelMuted:alMessage.groupId]) || [alMessage isMsgHidden]) {
             return;
         }
-        
+
         ALNotificationView * alnotification = [[ALNotificationView alloc] initWithAlMessage:alMessage
                                                                            withAlertMessage:alMessage.message];
-        
-        [alnotification nativeNotification:self];
+
+        [alnotification showNativeNotificationWithcompletionHandler:^(BOOL show) {
+            [helper handlerNotificationClick:alMessage.contactIds withGroupId:alMessage.groupId withConversationId:alMessage.conversationId notificationTapActionDisable:[ALApplozicSettings isInAppNotificationTapDisabled]];
+        }];
     }
+
 }
 
 -(void)delivered:(NSString *)messageKey contactId:(NSString *)contactId withStatus:(int)status
@@ -1317,49 +1331,63 @@
      }];
 }
 
--(void)pushNotificationhandler:(NSNotification *) notification
+-(ALMessage *)getMessageFromAlertValue:(NSString *) alertValue
 {
-    NSString * contactId = notification.object;
+    ALMessage *msg = [[ALMessage alloc] init];
+    msg.message = alertValue;
+    NSArray *myArray = [msg.message componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@":"]];
     
-    NSArray * myArray = [contactId componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@":"]];
-    
-    if(myArray.count > 2)
+    if(myArray.count > 1)
     {
-        self.channelKey = @([ myArray[1] intValue]);
+        alertValue = [NSString stringWithFormat:@"%@", myArray[1]];
     }
     else
     {
-        self.channelKey = nil;
+        alertValue = myArray[0];
     }
+    msg.message = alertValue;
+    msg.groupId = self.channelKey;
+    return msg;
+}
+
+-(void)pushNotificationhandler:(NSNotification *) notification
+{
+    NSString * notificationObject = notification.object;
+    NSString * contactId = nil;
+    NSNumber * conversationId = nil;
+    NSArray * myArray = [notificationObject componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@":"]];
+    
+    if (myArray.count > 2) {
+        self.channelKey = @([ myArray[1] intValue]);
+        contactId = myArray[2];
+    } else if (myArray.count == 2) {
+        self.channelKey = nil;
+        contactId = myArray[0];
+        conversationId = @([myArray[1] intValue]);
+    } else {
+        self.channelKey = nil;
+        contactId = myArray[0];
+    }
+    
     
     NSDictionary *dict = notification.userInfo;
     NSNumber * updateUI = [dict valueForKey:@"updateUI"];
     NSString * alertValue = [dict valueForKey:@"alertValue"];
     
+    ALMessage *message = [self getMessageFromAlertValue:alertValue];
+    message.contactIds = contactId;
+    message.groupId = self.channelKey;
+    if (conversationId) {
+        message.conversationId = conversationId;
+    }
+    
     if (self.isViewLoaded && self.view.window && [updateUI isEqualToNumber:[NSNumber numberWithInt:APP_STATE_ACTIVE]])
     {
-        ALMessage *msg = [[ALMessage alloc] init];
-        msg.message = alertValue;
-        NSArray *myArray = [msg.message componentsSeparatedByCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@":"]];
-        
-        if(myArray.count > 1)
-        {
-            alertValue = [NSString stringWithFormat:@"%@", myArray[1]];
-        }
-        else
-        {
-            alertValue = myArray[0];
-        }
-        msg.message = alertValue;
-        msg.contactIds = contactId;
-        msg.groupId = self.channelKey;
-
-        [self syncCall:msg andMessageList:nil];
+        [self syncCall:message andMessageList:nil];
     }
     else if([updateUI isEqualToNumber:[NSNumber numberWithInt:APP_STATE_INACTIVE]])
     {
-        ALSLog(ALLoggerSeverityInfo, @"######## IT SHOULD NEVER COME HERE #########");
-        [self createDetailChatViewController: contactId];
+        [self createDetailChatViewControllerWithMessage:message];
 //      [self.detailChatViewController fetchAndRefresh];
         [self.detailChatViewController setRefresh: YES];
     }
@@ -1454,22 +1482,69 @@
     }
 }
 
--(void)appWillEnterForeground:(NSNotification *)notification
-{
-    ALSLog(ALLoggerSeverityInfo, @"will enter foreground notification");
-   // [self syncCall:nil];
-    //[self callLastSeenStatusUpdate];
-}
-
 -(void)newMessageHandler:(NSNotification *)notification
 {
-    NSMutableArray * messageArray = notification.object;
-    NSSortDescriptor *valueDescriptor = [[NSSortDescriptor alloc] initWithKey:@"createdAtTime" ascending:YES];
-    NSArray *descriptors = [NSArray arrayWithObject:valueDescriptor];
-    [messageArray sortUsingDescriptors:descriptors];
-    [self updateMessageList:messageArray];
-}
 
+    NSMutableArray * messageArray = notification.object;
+
+    NSMutableArray * allMessagesArray = [[NSMutableArray alloc]init];
+
+    allMessagesArray = self.mContactsMessageListArray;
+    ALChannelService *channelService = [[ALChannelService alloc]init];
+
+
+    for(ALMessage *message in messageArray){
+
+        NSArray * theFilteredArray;
+        if([message getGroupId])
+        {
+
+            theFilteredArray = [self.mContactsMessageListArray filteredArrayUsingPredicate:
+                                [NSPredicate predicateWithFormat:@"groupId = %@",[message getGroupId]]];
+        }
+        else
+        {
+            theFilteredArray = [self.mContactsMessageListArray filteredArrayUsingPredicate:
+                                [NSPredicate predicateWithFormat:@"contactIds = %@ AND groupId = %@",message.contactIds,nil]];
+        }
+
+
+        if(message.groupId){
+
+            ALChannel *channel =  [channelService getChannelByKey:message.groupId];
+
+            BOOL channelFlag = ([ALApplozicSettings getSubGroupLaunchFlag] && [channel.parentKey isEqualToNumber:self.parentGroupKey]);
+            BOOL categoryFlag =  [ALApplozicSettings getCategoryName] && [channel isPartOfCategory:[ALApplozicSettings getCategoryName]];
+
+            BOOL ignoreMessageAddingFlag =  (channelFlag || categoryFlag || !([ALApplozicSettings getSubGroupLaunchFlag] || [ALApplozicSettings getCategoryName]));
+
+            if (!ignoreMessageAddingFlag)
+            {
+                continue;
+            }
+        }
+
+
+        NSUInteger index = 0;
+        if(theFilteredArray.count){
+            ALMessage * firstMessage = theFilteredArray.firstObject;
+            index = [allMessagesArray indexOfObject:firstMessage];
+            if(index != NSNotFound ){
+                allMessagesArray[index] = message;
+            }
+        }else{
+            [allMessagesArray addObject:message];
+        }
+
+    }
+    NSSortDescriptor *valueDescriptor = [[NSSortDescriptor alloc] initWithKey:@"createdAtTime" ascending:NO];
+    NSArray *descriptors = [NSArray arrayWithObject:valueDescriptor];
+    [allMessagesArray sortUsingDescriptors:descriptors];
+
+    self.mContactsMessageListArray = allMessagesArray;
+
+    [self.mTableView reloadData];
+}
 //==============================================================================================================================================
 #pragma mark - CREATE GROUP METHOD
 //==============================================================================================================================================

@@ -11,8 +11,8 @@
 #import "ALRequestHandler.h"
 #import "ALResponseHandler.h"
 
-#define CREATE_CONVERSATION_URL @"/rest/ws/conversation/id"
-#define FETCH_CONVERSATION_DETAILS @"/rest/ws/conversation/topicId"
+static NSString *const CREATE_CONVERSATION_URL = @"/rest/ws/conversation/id";
+static NSString *const FETCH_CONVERSATION_DETAILS = @"/rest/ws/conversation/topicId";
 
 @implementation ALConversationClientService
 

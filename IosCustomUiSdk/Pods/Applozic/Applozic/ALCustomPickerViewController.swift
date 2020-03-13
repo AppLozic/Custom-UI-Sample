@@ -58,9 +58,11 @@ public class ALBaseNavigationViewController: UINavigationController {
     var cameraMode:ALCameraPhotoType = .NoCropOption
     let option = PHImageRequestOptions()
     var selectedRows = [Int]()
-    var selectedImages = [Int: UIImage]()
-    var selectedVideos = [Int: String]()
-    var selectedGifs = [Int: Data]()
+    var selectedImages = [Int: PHAsset]()
+    var selectedVideos = [Int: PHAsset]()
+    var selectedGifs = [Int: PHAsset]()
+    
+    var videoCoder: ALVideoCoder?
     
     var multimediaData: ALMultimediaData = ALMultimediaData()
     
@@ -109,11 +111,15 @@ public class ALBaseNavigationViewController: UINavigationController {
         }
         self.navigationItem.leftBarButtonItem = UIBarButtonItem.init(image: backImage, style: .plain, target: self , action: #selector(dismissAction(_:)))
         self.navigationController?.navigationBar.barTintColor = ALApplozicSettings.getColorForNavigation()
-        self.navigationController?.navigationBar.tintColor = ALApplozicSettings.getColorForNavigationItem()
+
+        let navigationItemColor = ALApplozicSettings.getColorForNavigationItem() ?? UIColor.white
+
+        self.navigationController?.navigationBar.tintColor = navigationItemColor
+
         if let aSize = UIFont(name: "Helvetica-Bold", size: 18) {
-            self.navigationController?.navigationBar.titleTextAttributes = [NSAttributedStringKey.foregroundColor: ALApplozicSettings.getColorForNavigationItem(),
-                                                                            NSAttributedStringKey.font: aSize]
+            self.navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.foregroundColor: navigationItemColor, NSAttributedString.Key.font: aSize]
         }
+
     }
 
     private func checkPhotoLibraryPermission() {
@@ -146,6 +152,9 @@ public class ALBaseNavigationViewController: UINavigationController {
                     //whatever
                 }
             }
+      @unknown default:
+            print("Unknown permission state in PhotoLibrary")
+            break
         }
     }
 
@@ -154,71 +163,35 @@ public class ALBaseNavigationViewController: UINavigationController {
         let allPhotosOptions = PHFetchOptions()
         allPhotosOptions.includeHiddenAssets = false
 
-        let p1 = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
-        let p2 = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
-        allPhotosOptions.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [p1, p2])
+
+        if(ALApplozicSettings.imagesHiddenInGallery()){
+            let videoNSPredicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
+            allPhotosOptions.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [videoNSPredicate])
+        }else if (ALApplozicSettings.videosHiddenInGallery()){
+            let imageNSPredicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
+            allPhotosOptions.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [imageNSPredicate])
+        }else{
+            let imageNSPredicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
+            let videoNSPredicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
+            allPhotosOptions.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [imageNSPredicate,videoNSPredicate])
+        }
+
         allPhotosOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         allPhotos = PHAsset.fetchAssets(with: allPhotosOptions)
+
         (allPhotos != nil) ? completion(true) :  completion(false)
     }
 
     private func createScrollGallery(isGrant:Bool) {
-        if isGrant
-        {
+        if isGrant {
             self.selectedRows = Array(repeating: 0, count: (self.allPhotos != nil) ? self.allPhotos.count:0)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: {
                 self.previewGallery.reloadData()
             })
         }
-
-    }
-
-    func exportVideoAsset(indexPath: IndexPath, _ asset: PHAsset) {
-        let filename = String(format: "VID-%f.mp4", Date().timeIntervalSince1970*1000)
-        let documentsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-
-        let filePath = documentsUrl.absoluteString.appending(filename)
-        guard var fileurl = URL(string: filePath) else { return }
-        print("exporting video to ", fileurl)
-        fileurl = fileurl.standardizedFileURL
-
-
-        let options = PHVideoRequestOptions()
-        options.deliveryMode = .highQualityFormat
-        options.isNetworkAccessAllowed = true
-
-        // remove any existing file at that location
-        do {
-            try FileManager.default.removeItem(at: fileurl)
-        }
-        catch {
-            // most likely, the file didn't exist.  Don't sweat it
-        }
-
-        PHImageManager.default().requestExportSession(forVideo: asset, options: options, exportPreset: AVAssetExportPresetHighestQuality) {
-            (exportSession: AVAssetExportSession?, _) in
-
-            if exportSession == nil {
-                print("COULD NOT CREATE EXPORT SESSION")
-                return
-            }
-
-            exportSession!.outputURL = fileurl
-            exportSession!.outputFileType = AVFileType.mp4 //file type encode goes here, you can change it for other types
-
-            print("GOT EXPORT SESSION")
-            exportSession!.exportAsynchronously() {
-                print("EXPORT DONE")
-                self.selectedVideos[indexPath.row] = fileurl.path
-            }
-
-            print("progress: \(exportSession!.progress)")
-            print("error: \(String(describing: exportSession?.error))")
-            print("status: \(exportSession!.status.rawValue)")
-        }
     }
     
-    func exportGifAsset(indexPath: IndexPath, _ asset: PHAsset){
+    func exportGifAsset(_ asset: PHAsset, completion: @escaping (Data?) -> Void){
         let options = PHImageRequestOptions()
         options.isSynchronous = true;
         options.isNetworkAccessAllowed = false;
@@ -226,11 +199,10 @@ public class ALBaseNavigationViewController: UINavigationController {
         
         gifData(asset: asset, options: options, completionHandler: {
             data, error in
-            if let gifData = data {
-                self.selectedGifs[indexPath.row] = gifData
-            }else{
+            if data == nil {
                 NSLog("Error while exporting gif \(error ?? "")")
             }
+            completion(data)
         })
     }
     
@@ -256,20 +228,74 @@ public class ALBaseNavigationViewController: UINavigationController {
 
     @IBAction func doneButtonAction(_ sender: UIBarButtonItem) {
 
+        let dispatchGroup = DispatchGroup()
+        
+        var videoPaths: [String] = []
+        dispatchGroup.enter()
+        
+        var isCanceled = false
         let videos = Array(selectedVideos.values)
-        let images = Array(selectedImages.values)
-        let gifs = Array(selectedGifs.values)
-        delegate?.multimediaSelected(selectedMultimediaList(images: images, videos: videos, gifs: gifs))
-        self.navigationController?.dismiss(animated: false, completion: nil)
-
+        
+        videoCoder = ALVideoCoder()
+        
+        let range = CMTimeRange(start: .zero, duration: CMTimeMakeWithSeconds(300, preferredTimescale: 600))
+        videoCoder?.convert(phAssets: videos, range: range, baseVC: self) { urls in
+            if let savedUrls = urls {
+                videoPaths = savedUrls
+            } else {
+                isCanceled = true
+            }
+            dispatchGroup.leave()
+        }
+        
+        var images: [UIImage] = []
+        for image in selectedImages.values {
+            dispatchGroup.enter()
+            let options = PHImageRequestOptions()
+            options.isSynchronous = true
+            PHCachingImageManager.default().requestImage(for: image, targetSize: CGSize(width: 1280, height: 720), contentMode: .aspectFill, options: options) { (image, _) in
+                if let image = image {
+                    images.append(image)
+                }
+                dispatchGroup.leave()
+            }
+        }
+        
+        var gifsData: [Data] = []
+        for gif in selectedGifs.values {
+            dispatchGroup.enter()
+            exportGifAsset(gif) { data in
+                if let data = data {
+                    gifsData.append(data)
+                }
+                dispatchGroup.leave()
+            }
+        }
+        
+        dispatchGroup.notify(queue: .main) { [weak self] in
+            
+            guard !isCanceled else {
+                return
+            }
+            
+            if let list = self?.selectedMultimediaList(images: images, videos: videoPaths, gifs: gifsData) {
+                self?.delegate?.multimediaSelected(list)
+            }
+            self?.dismiss(animated: false, completion: nil)
+        }
     }
-
     @IBAction func dismissAction(_ sender: UIBarButtonItem) {
         self.navigationController?.dismiss(animated: false, completion: nil)
     }
     
     func selectedMultimediaList(images: [UIImage], videos: [String], gifs: [Data]) -> [ALMultimediaData]{
         var multimediaList = [ALMultimediaData]()
+
+        for gifData in gifs
+        {
+            multimediaList.append(multimediaData.getOf(ALMultimediaTypeGif, with: UIImage.animatedImage(withAnimatedGIFData: gifData),
+                                                       withGif: gifData, withVideo: nil))
+        }
 
         for image in images
         {
@@ -279,12 +305,6 @@ public class ALBaseNavigationViewController: UINavigationController {
         for video in videos
         {
             multimediaList.append(multimediaData.getOf(ALMultimediaTypeVideo, with: nil, withGif: nil, withVideo: video))
-        }
-
-        for gifData in gifs
-        {
-            multimediaList.append(multimediaData.getOf(ALMultimediaTypeGif, with: UIImage.animatedImage(withAnimatedGIFData: gifData),
-                                                       withGif: gifData, withVideo: nil))
         }
 
         return multimediaList
@@ -319,14 +339,11 @@ extension ALCustomPickerViewController: UICollectionViewDelegate, UICollectionVi
         } else {
             selectedRows[indexPath.row] = 1
             if checkGif(asset: asset){
-                exportGifAsset(indexPath: indexPath, asset)
+                selectedGifs[indexPath.row] = asset
             }else if asset.mediaType == .video {
-                exportVideoAsset(indexPath: indexPath, asset)
+                selectedVideos[indexPath.row] = asset
             } else {
-                PHCachingImageManager.default().requestImageData(for: asset, options:nil) { (imageData, _, _, _) in
-                    let image = UIImage(data: imageData!)
-                    self.selectedImages[indexPath.row] = image
-                }
+                selectedImages[indexPath.row] = asset
             }
         }
 
