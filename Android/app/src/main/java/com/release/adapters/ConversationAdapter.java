@@ -36,6 +36,7 @@ import com.applozic.mobicomkit.channel.service.ChannelService;
 import com.applozic.mobicomkit.contact.AppContactService;
 import com.applozic.mobicomkit.exception.ApplozicException;
 import com.applozic.mobicomkit.listners.MediaDownloadProgressHandler;
+import com.applozic.mobicommons.commons.core.utils.DateUtils;
 import com.applozic.mobicommons.commons.image.ImageUtils;
 import com.applozic.mobicommons.people.channel.Channel;
 import com.applozic.mobicommons.people.contact.Contact;
@@ -129,7 +130,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 holder.sendProgressBar.setVisibility(View.GONE);
                 holder.overlayIcon.setVisibility(View.GONE);
 
-                holder.messageTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(message.getCreatedAtTime()));
+                holder.messageTime.setText(DateUtils.getFormattedDate(message.getCreatedAtTime()));
 
                 if(!message.isSentToServer()){
                     if(message.hasAttachment()) {
@@ -312,7 +313,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     receivedHolder.profileName.setText(contact.getDisplayName());
                 }
 
-                receivedHolder.messageTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(message.getCreatedAtTime()));
+                receivedHolder.messageTime.setText(DateUtils.getFormattedDate(message.getCreatedAtTime()));
 //                receivedHolder.profileName.setText(message.getContactIds());
                 /**
                  * Download Location From Received Message.

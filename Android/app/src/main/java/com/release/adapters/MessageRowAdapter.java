@@ -21,6 +21,7 @@ import com.applozic.mobicomkit.contact.AppContactService;
 import com.applozic.mobicomkit.contact.database.ContactDatabase;
 import com.applozic.mobicomkit.exception.ApplozicException;
 import com.applozic.mobicomkit.listners.MessageListHandler;
+import com.applozic.mobicommons.commons.core.utils.DateUtils;
 import com.applozic.mobicommons.people.channel.Channel;
 import com.applozic.mobicommons.people.contact.Contact;
 import com.bumptech.glide.Glide;
@@ -113,7 +114,7 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                     holder.message.setText(current.getMessage());
                 }
 
-                holder.createdAtTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(current.getCreatedAtTime()));
+                holder.createdAtTime.setText(DateUtils.getFormattedDateAndTime(mContext, current.getCreatedAtTime(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS));
                 holder.singleRowLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -168,7 +169,7 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                     holder.message.setText(current.getMessage());
                 }
 
-                holder.createdAtTime.setText(com.applozic.mobicommons.commons.core.utils.DateUtils.getFormattedDateAndTime(current.getCreatedAtTime()));
+                holder.createdAtTime.setText(DateUtils.getFormattedDateAndTime(mContext, current.getCreatedAtTime(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS));
                 holder.singleRowLayout.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {

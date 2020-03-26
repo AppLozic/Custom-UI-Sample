@@ -32,10 +32,12 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -95,25 +97,6 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     private ConversationAdapter conversationAdapter;
     private EditText sendMessageContent;
 
-    @Override
-    public void onMqttConnected() {
-
-    }
-
-    @Override
-    public void onUserOnline() {
-
-    }
-
-    @Override
-    public void onUserOffline() {
-
-    }
-
-    @Override
-    public void onUserMute(boolean mute, String userId) {
-
-    }
 
     private ImageButton sendTextButton;
     private List<Message> messageList;
@@ -164,7 +147,6 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         connectivityReceiver = new ConnectMqtt();
 
         processIntent();
-
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
@@ -184,6 +166,17 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
         mFileName = getExternalCacheDir().getAbsolutePath();
         mFileName = mFileName +"/"+ UUID.randomUUID().toString() + "recording.amr";
+
+        sendMessageContent.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (EditorInfo.IME_ACTION_DONE == actionId && ConversationActivity.this != null) {
+                    Utils.toggleSoftKeyBoard(ConversationActivity.this, true);
+                    return true;
+                }
+                return false;
+            }
+        });
         sendMessageContent.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -457,6 +450,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     public void getMessageListForContact(String contactId) {
         final Contact contact = new AppContactService(ConversationActivity.this).getContactById(contactId);
         mContact = contact;
+        mChannel = null;
         if (contact != null) {
             Intent intent = new Intent(ConversationActivity.this, UserIntentService.class);
             intent.putExtra(UserIntentService.USER_ID, contactId);
@@ -465,7 +459,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         toolbarTitle.setText(contact.getDisplayName());
         Contact temp = new AppContactService(ConversationActivity.this).getContactById(mContact.getContactIds());
         toolbarStatus.setVisibility(View.VISIBLE);
-        toolbarStatus.setText(temp.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.plurals.YESTERDAY));
+        toolbarStatus.setText(temp.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.string.YESTERDAY));
         ApplozicConversation.getMessageListForContact(ConversationActivity.this, (new ContactDatabase(ConversationActivity.this)).getContactById(contactId), null, new MessageListHandler() {
             @Override
             public void onResult(List<Message> messageList, ApplozicException e) {
@@ -488,6 +482,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 
         final Channel channel = ChannelService.getInstance(ConversationActivity.this).getChannelInfo(channelId);
         mChannel = channel;
+        mContact = null;
         toolbarTitle.setText(channel.getName());
         ApplozicConversation.getMessageListForChannel(ConversationActivity.this, ChannelDatabaseService.getInstance(ConversationActivity.this).getChannelByChannelKey(channelId), null, new MessageListHandler() {
             @Override
@@ -767,28 +762,8 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
      * @return
      */
     public boolean isMessageForAdapter(Message message) {
-        if (message.isGroupMessage()) {
-            if (messageList.get(0).isGroupMessage()) {
-                if (message.getGroupId().equals(messageList.get(0).getGroupId())) {
-                    return true;
-
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        } else {
-            if (messageList.get(0).isGroupMessage()) {
-                return false;
-            } else {
-                if (message.getTo().equals(messageList.get(0).getTo())) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        }
+        return (message.getGroupId() != null && mChannel != null && message.getGroupId().equals(mChannel.getKey())) ||
+                (!TextUtils.isEmpty(message.getContactIds()) && mContact != null && message.getContactIds().equals(mContact.getContactIds())) && message.getGroupId() == null;
     }
 
     /**
@@ -972,7 +947,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                     toolbarStatus.setVisibility(View.VISIBLE);
                     toolbarStatus.setText("TYPING.....");
                 } else {
-                    toolbarStatus.setText(mContact.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.plurals.YESTERDAY));
+                    toolbarStatus.setText(mContact.isOnline()?"ONLINE":"Last seen: "+DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS,R.string.YESTERDAY));
                 }
             }
         }
@@ -992,7 +967,7 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
                     toolbarStatus.setText("ONLINE");
                 }else if(temp.getLastSeenAt() != 0){
                     toolbarStatus.setVisibility(View.VISIBLE);
-                    toolbarStatus.setText("Last seen: " + DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.plurals.YESTERDAY));
+                    toolbarStatus.setText("Last seen: " + DateUtils.getDateAndTimeForLastSeen(getApplicationContext(), mContact.getLastSeenAt(), R.string.JUST_NOW, R.plurals.MINUTES, R.plurals.HOURS, R.string.YESTERDAY));
                 }else{
                     toolbarStatus.setText("");
                 }
@@ -1004,6 +979,21 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     public void onMqttDisconnected() {
         Log.d("Checking","..................................." + "MQQQT DISCONNECTED" + "...................................");
         Applozic.connectPublish(ConversationActivity.this);
+    }
+
+    @Override
+    public void onMqttConnected() {
+
+    }
+
+    @Override
+    public void onUserOnline() {
+
+    }
+
+    @Override
+    public void onUserOffline() {
+
     }
 
     @Override
@@ -1024,6 +1014,11 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     @Override
     public void onMessageMetadataUpdated(String keyString) {
         Log.d("Checking ", "..................................." + "META DATA CALLED" + "...................................");
+    }
+
+    @Override
+    public void onUserMute(boolean mute, String userId) {
+
     }
 
     public void connectPublishAgain(){

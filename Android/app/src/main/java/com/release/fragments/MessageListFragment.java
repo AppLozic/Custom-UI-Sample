@@ -254,6 +254,21 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
     }
 
     @Override
+    public void onMqttConnected() {
+
+    }
+
+    @Override
+    public void onUserOnline() {
+
+    }
+
+    @Override
+    public void onUserOffline() {
+
+    }
+
+    @Override
     public void onChannelUpdated() {
 
     }
@@ -270,6 +285,11 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
 
     @Override
     public void onMessageMetadataUpdated(String keyString) {
+
+    }
+
+    @Override
+    public void onUserMute(boolean mute, String userId) {
 
     }
 
