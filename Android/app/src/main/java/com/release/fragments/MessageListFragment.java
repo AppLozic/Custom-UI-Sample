@@ -1,34 +1,34 @@
 package com.release.fragments;
 
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.applozic.mobicomkit.Applozic;
 import com.applozic.mobicomkit.api.MobiComKitConstants;
 import com.applozic.mobicomkit.api.conversation.ApplozicConversation;
 import com.applozic.mobicomkit.api.conversation.Message;
-import com.applozic.mobicomkit.api.conversation.MobiComConversationService;
 import com.applozic.mobicomkit.api.conversation.database.MessageDatabaseService;
+import com.applozic.mobicomkit.broadcast.AlEventManager;
 import com.applozic.mobicomkit.exception.ApplozicException;
 import com.applozic.mobicomkit.listners.ApplozicUIListener;
 import com.applozic.mobicomkit.listners.MessageListHandler;
@@ -37,13 +37,15 @@ import com.release.R;
 import com.release.adapters.MessageRowAdapter;
 
 import java.util.ArrayList;
+import java.util.EventListener;
 import java.util.List;
 
-public class MessageListFragment extends Fragment implements ApplozicUIListener{
+public class MessageListFragment extends Fragment implements ApplozicUIListener {
 
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
+    static String TAG = "MessageListFragment";
     private OnFragmentInteractionListener mListener;
     List<Message> listOfMessages = new ArrayList<>();
 
@@ -76,23 +78,22 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                if(dy > 0){
+                if (dy > 0) {
                     visibleItemCount = linearLayoutManager.getChildCount();
                     pastVisibleItems = linearLayoutManager.findFirstVisibleItemPosition();
                     totalItemCount = linearLayoutManager.getItemCount();
 
-                    if(loading){
-                        if ( (visibleItemCount + pastVisibleItems) >= totalItemCount)
-                        {
+                    if (loading) {
+                        if ((visibleItemCount + pastVisibleItems) >= totalItemCount) {
                             loading = false;
                             //Do pagination.. i.e. fetch new data
                             ApplozicConversation.getLatestMessageList(getActivity(), true, new MessageListHandler() {
                                 @Override
                                 public void onResult(List<Message> messageList, ApplozicException e) {
-                                    if(e==null){
+                                    if (e == null) {
                                         listOfMessages.addAll(messageList);
                                         adapter.notifyDataSetChanged();
-                                    }else{
+                                    } else {
                                         e.printStackTrace();
                                     }
                                 }
@@ -107,7 +108,7 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (MobiComKitConstants.APPLOZIC_UNREAD_COUNT.equals(intent.getAction())) {
-                    int unreadCount  =  (new MessageDatabaseService(getActivity())).getTotalUnreadCount();
+                    int unreadCount = (new MessageDatabaseService(getActivity())).getTotalUnreadCount();
                     //Update unread count in UI
                 }
             }
@@ -117,11 +118,12 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
 
     /**
      * setView is used to create the recycler view adapter from the list of messages sent to this method
+     *
      * @param messageList List of different conversation
      */
-    public void setView(List<Message> messageList){
+    public void setView(List<Message> messageList) {
         listOfMessages = messageList;
-        adapter = new MessageRowAdapter(getActivity(),listOfMessages);
+        adapter = new MessageRowAdapter(getActivity(), listOfMessages);
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
     }
@@ -142,25 +144,26 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
         super.onDetach();
         mListener = null;
     }
+
     @Override
     public void onResume() {
         super.onResume();
         ApplozicConversation.getLatestMessageList(getActivity(), false, new MessageListHandler() {
             @Override
             public void onResult(List<Message> messageList, ApplozicException e) {
-                if(e==null){
+                if (e == null) {
                     setView(messageList);
-                }else{
+                } else {
                     e.printStackTrace();
                 }
             }
         });
         Applozic.connectPublish(getActivity());
-        Applozic.getInstance(getActivity()).registerUIListener(this);
+        AlEventManager.getInstance().registerUIListener(TAG, this);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(unreadCountBroadcastReceiver, new IntentFilter(MobiComKitConstants.APPLOZIC_UNREAD_COUNT));
     }
 
-    private void changeAppBar(){
+    private void changeAppBar() {
         ((MainActivity) getActivity()).getSupportActionBar().setTitle("Chat");
     }
 
@@ -168,9 +171,9 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
     public void onPause() {
         super.onPause();
         Applozic.disconnectPublish(getActivity());
-        Applozic.getInstance(getActivity()).unregisterUIListener();
+        AlEventManager.getInstance().unregisterUIListener(TAG);
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(unreadCountBroadcastReceiver);
-     }
+    }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -187,18 +190,19 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener{
 
     @Override
     public void onMessageSent(Message message) {
-        Log.d("Attachment Sent ","Message acknowledge");
+        Log.d("Attachment Sent ", "Message acknowledge");
     }
 
     /**
      * Overridden method from ApplozicUIListener. It is called whenever a new message is received.
      * This function updates the recycler view by adding the newly received message in message list.
+     *
      * @param message The new message received.
      */
     @Override
     public void onMessageReceived(Message message) {
-        Toast.makeText(getActivity(),"New Message received",Toast.LENGTH_SHORT).show();
-        ApplozicConversation.addLatestMessage(message,listOfMessages);
+        Toast.makeText(getActivity(), "New Message received", Toast.LENGTH_SHORT).show();
+        ApplozicConversation.addLatestMessage(message, listOfMessages);
         adapter.notifyDataSetChanged();
     }
 

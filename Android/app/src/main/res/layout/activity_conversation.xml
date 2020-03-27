@@ -8,7 +8,7 @@
     android:theme="@style/Theme.ConversationActivity"
     tools:context="com.release.activity.ConversationActivity">
 
-    <android.support.v7.widget.Toolbar
+    <androidx.appcompat.widget.Toolbar
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:id="@+id/conversation_activity_toolbar"
@@ -42,7 +42,7 @@
 
         </LinearLayout>
 
-    </android.support.v7.widget.Toolbar>
+    </androidx.appcompat.widget.Toolbar>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -128,7 +128,7 @@
         android:background="#aaaaaa"
         android:layout_above="@+id/chatbox"/>
 
-    <android.support.v4.widget.SwipeRefreshLayout
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -136,14 +136,14 @@
         android:layout_above="@id/get_above"
         android:layout_below="@id/conversation_activity_toolbar"
         android:layout_marginBottom="5dp">
-        <android.support.v7.widget.RecyclerView
+        <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/recyclerview_message_list"
             android:scrollbars="vertical"
             android:layout_above="@id/get_above">
-        </android.support.v7.widget.RecyclerView>
-    </android.support.v4.widget.SwipeRefreshLayout>
+        </androidx.recyclerview.widget.RecyclerView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 
 </RelativeLayout>

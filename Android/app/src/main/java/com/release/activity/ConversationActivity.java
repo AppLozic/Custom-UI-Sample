@@ -13,36 +13,34 @@ import android.media.MediaRecorder;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.NavUtils;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+
+import com.applozic.mobicomkit.broadcast.AlEventManager;
+import com.applozic.mobicomkit.broadcast.BroadcastService;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NavUtils;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,7 +52,6 @@ import com.applozic.mobicomkit.api.conversation.Message;
 import com.applozic.mobicomkit.api.conversation.MessageBuilder;
 import com.applozic.mobicomkit.api.conversation.MobiComConversationService;
 import com.applozic.mobicomkit.api.people.UserIntentService;
-import com.applozic.mobicomkit.broadcast.ConnectivityReceiver;
 import com.applozic.mobicomkit.channel.database.ChannelDatabaseService;
 import com.applozic.mobicomkit.channel.service.ChannelService;
 import com.applozic.mobicomkit.contact.AppContactService;
@@ -77,12 +74,8 @@ import com.release.R;
 //import com.release.adapters.ClickedItem;
 import com.release.adapters.ConversationAdapter;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -423,7 +416,9 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
 //
                 if (message.isGroupMessage()) {
                     getMessageListForChannel(message.getGroupId());
+                    BroadcastService.currentUserId = String.valueOf(message.getGroupId());
                 } else {
+                    BroadcastService.currentUserId = String.valueOf(message.getContactIds());
                     getMessageListForContact(message.getContactIds());
                 }
             }
@@ -437,8 +432,11 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
     public void setMessageList(List<Message> messages) {
         messageList = messages;
         conversationAdapter = new ConversationAdapter(this, messageList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setHasFixedSize(true);
         recyclerView.setAdapter(conversationAdapter);
         conversationAdapter.notifyDataSetChanged();
+        recyclerView.scrollToPosition(messageList.size() - 1);
     }
 
     /**
@@ -816,14 +814,18 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         super.onResume();
         Applozic.connectPublish(this);
         if(isGroup){
-            Applozic.subscribeToTyping(ConversationActivity.this,mChannel, null);
+            if (mChannel != null){
+                Applozic.subscribeToTyping(ConversationActivity.this,mChannel, null);
+                BroadcastService.currentUserId =  String.valueOf(mChannel.getKey());
+            }
         }else{
+            BroadcastService.currentUserId =  mContact.getUserId();
             Applozic.subscribeToTyping(ConversationActivity.this, null, mContact);
         }
         if(connectivityReceiver != null) {
             registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
         }
-        Applozic.getInstance(this).registerUIListener(this);
+        AlEventManager.getInstance().registerUIListener(TAG,this);
     }
 
     @Override
@@ -837,8 +839,10 @@ public class ConversationActivity extends AppCompatActivity implements ApplozicU
         if (connectivityReceiver != null) {
             unregisterReceiver(connectivityReceiver);
         }
+        BroadcastService.currentUserId = null;
         Applozic.disconnectPublish(this);
-        Applozic.getInstance(this).unregisterUIListener();
+
+        AlEventManager.getInstance().unregisterUIListener(TAG);
     }
 
 

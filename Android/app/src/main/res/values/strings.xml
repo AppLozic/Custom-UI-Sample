@@ -76,6 +76,8 @@
 
     <string name="JUST_NOW">Just now</string>
     <string name="YESTERDAY">Yesterday</string>
+    <string name="Today">Today</string>
+
 
     <plurals name="HOURS">
         <item quantity="one">%d hr</item>
