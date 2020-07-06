@@ -1,6 +1,6 @@
 <resources>
 
-    <string name="app_name">Release</string>
+    <string name="app_name">Applozic</string>
     <string name="mobicomkit_label">Applozic</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="title_section1">Section 1</string>
@@ -98,5 +98,10 @@
         <item quantity="one">%d hr ago</item>
         <item quantity="other">%d hrs ago</item>
     </plurals>
+
+    <!--Conversation activity-->
+
+    <string name="auth_token_loading_message">Please wait…</string>
+
 
 </resources>

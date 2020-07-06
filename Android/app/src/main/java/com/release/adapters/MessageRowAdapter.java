@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -127,12 +129,12 @@ public class MessageRowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 //                    holder.unreadSmsCount.setText(String.valueOf(channel.getUnreadCount()));
                 if(messageDatabaseService.getUnreadMessageCountForChannel(current.getGroupId()) != 0)
                     holder.unreadSmsCount.setText(String.valueOf(messageDatabaseService.getUnreadMessageCountForChannel(current.getGroupId())));
-                if(channel.getImageUrl() == null || channel.getImageUrl().equalsIgnoreCase(null)) {
+                if (TextUtils.isEmpty(channel.getImageUrl())) {
                     holder.contactPhoto.setImageResource(R.drawable.group_profile);
-                }
-                else {
+                } else {
                     Glide.with(mContext).load(channel.getImageUrl()).
                             thumbnail(0.5f).
+                            placeholder(R.drawable.group_profile).
                             into(holder.contactPhoto);
                 }
 

@@ -158,7 +158,7 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener 
                 }
             }
         });
-        Applozic.connectPublish(getActivity());
+        connectPublishWithVerifyToken();
         AlEventManager.getInstance().registerUIListener(TAG, this);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(unreadCountBroadcastReceiver, new IntentFilter(MobiComKitConstants.APPLOZIC_UNREAD_COUNT));
     }
@@ -254,9 +254,14 @@ public class MessageListFragment extends Fragment implements ApplozicUIListener 
     @Override
     public void onMqttDisconnected() {
         Log.d("MyTest", "Mqtt disconnected ");
-        Applozic.connectPublish(getActivity());
+        connectPublishWithVerifyToken();
     }
 
+    public void connectPublishWithVerifyToken(){
+        if (getActivity() != null) {
+            Applozic.connectPublishWithVerifyToken(getActivity(), getActivity().getString(R.string.auth_token_loading_message));
+        }
+    }
     @Override
     public void onMqttConnected() {
 
