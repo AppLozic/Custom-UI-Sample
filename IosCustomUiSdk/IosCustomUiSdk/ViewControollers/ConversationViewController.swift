@@ -332,10 +332,6 @@ public class ConversationViewController: MessagesViewController {
                 print("Item Tapped")
             }
     }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "reloadData"), object: nil)
-    }
 }
 
 // MARK: - MessagesDataSource

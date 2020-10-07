@@ -187,7 +187,7 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
         var messagePresent = [ALMessage]()
 
-        if let _ = alMessage.groupId {
+        if alMessage.groupId != nil {
             messagePresent = allMessages.filter { ($0.groupId != nil) ? $0.groupId == alMessage.groupId : false }
         } else {
             messagePresent = allMessages.filter {
