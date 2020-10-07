@@ -4,3 +4,6 @@
 /Android/build/*
 .idea/*
 *.iml
+
+## iOS
+IosCustomUiSdk/Pods/
