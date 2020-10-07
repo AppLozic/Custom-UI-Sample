@@ -8,6 +8,8 @@ target 'IosCustomUiSdk' do
    pod 'Applozic'
    pod 'MessageKit'
    pod 'Kingfisher'
+   pod 'SwiftLint'
+   pod 'SwiftFormat/CLI'
 
   target 'IosCustomUiSdkTests' do
     inherit! :search_paths

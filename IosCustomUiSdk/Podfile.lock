@@ -12,11 +12,15 @@ PODS:
   - SDWebImage (5.7.4):
     - SDWebImage/Core (= 5.7.4)
   - SDWebImage/Core (5.7.4)
+  - SwiftFormat/CLI (0.46.3)
+  - SwiftLint (0.40.3)
 
 DEPENDENCIES:
   - Applozic
   - Kingfisher
   - MessageKit
+  - SwiftFormat/CLI
+  - SwiftLint
 
 SPEC REPOS:
   trunk:
@@ -25,6 +29,8 @@ SPEC REPOS:
     - Kingfisher
     - MessageKit
     - SDWebImage
+    - SwiftFormat
+    - SwiftLint
 
 SPEC CHECKSUMS:
   Applozic: e4c3d4a50d9feaa105608d9d8219686b6639b55b
@@ -32,7 +38,9 @@ SPEC CHECKSUMS:
   Kingfisher: 2fef2f4d9e809285aff7f6195b5290520904f3fa
   MessageKit: 5ff0908bce5a7b6e11bd0b60e13a33e03697d161
   SDWebImage: 48b88379b798fd1e4298f95bb25d2cdabbf4deb3
+  SwiftFormat: b639417da9e024b9e782f917bc9a080cf75bcb37
+  SwiftLint: dfd554ff0dff17288ee574814ccdd5cea85d76f7
 
-PODFILE CHECKSUM: b28824a707c5baf4bcff8f548109479fc465775d
+PODFILE CHECKSUM: 2d834887184f83a2839dd70691bab8c1b356ce3e
 
 COCOAPODS: 1.9.3

@@ -1,21 +1,18 @@
-import Foundation
 import CoreLocation
+import Foundation
 import MessageKit
 
 private struct MessageLocationItem: LocationItem {
-
     var location: CLLocation
     var size: CGSize
 
     init(location: CLLocation) {
         self.location = location
-        self.size = CGSize(width: 240, height: 240)
+        size = CGSize(width: 240, height: 240)
     }
-
 }
 
 private struct MessageMediaItem: MediaItem {
-
     var url: URL?
     var image: UIImage?
     var placeholderImage: UIImage
@@ -23,17 +20,17 @@ private struct MessageMediaItem: MediaItem {
 
     init(image: UIImage) {
         self.image = image
-        self.size = CGSize(width: 240, height: 240)
-        self.placeholderImage = UIImage()
+        size = CGSize(width: 240, height: 240)
+        placeholderImage = UIImage()
     }
-
 }
 
-internal struct Message: MessageType{
+internal struct Message: MessageType {
     var messageId: String
     var sender: SenderType {
         return contact
     }
+
     var sentDate: Date
     var kind: MessageKind
     var createdAtTime: NSNumber
@@ -44,10 +41,9 @@ internal struct Message: MessageType{
         self.kind = kind
         self.contact = contact
         self.messageId = messageId
-        self.sentDate = date
-        self.createdAtTime =  0
-        self.groupId =  0
-
+        sentDate = date
+        createdAtTime = 0
+        groupId = 0
     }
 
     init(text: String, sender: Contact, messageId: String, date: Date) {
@@ -76,5 +72,4 @@ internal struct Message: MessageType{
     init(emoji: String, sender: Contact, messageId: String, date: Date) {
         self.init(kind: .emoji(emoji), contact: sender, messageId: messageId, date: date)
     }
-
 }

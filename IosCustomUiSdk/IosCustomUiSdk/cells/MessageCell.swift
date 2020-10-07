@@ -6,13 +6,12 @@
 //  Copyright © 2018 Applozic. All rights reserved.
 //
 
-import Foundation
-import UIKit
 import Applozic
+import Foundation
 import Kingfisher
+import UIKit
 
 public class MessageCell: UITableViewCell {
-
     var message = ALMessage()
 
     private var avatarImageView: UIImageView = {
@@ -48,7 +47,7 @@ public class MessageCell: UITableViewCell {
         let view = UIView()
         let layer = view.layer
         view.isHidden = true
-        view.backgroundColor = UIColor.init(red: 200.0/255.0, green: 199.0/255.0, blue: 204.0/255.0, alpha: 0.33)
+        view.backgroundColor = UIColor(red: 200.0 / 255.0, green: 199.0 / 255.0, blue: 204.0 / 255.0, alpha: 0.33)
         return view
     }()
 
@@ -59,6 +58,7 @@ public class MessageCell: UITableViewCell {
     }()
 
     // MARK: BadgeNumber
+
     private lazy var badgeNumberView: UIView = {
         let view = UIView(frame: .zero)
         view.backgroundColor = UIColor.red
@@ -102,16 +102,13 @@ public class MessageCell: UITableViewCell {
         return label
     }()
 
-
     private func setupConstraints() {
-
-        self.addViewsForAutolayout(views: [avatarImageView, nameLabel,messageText,lineView,voipButton, avatarName,badgeNumberView, timeLabel,onlineStatusView])
+        addViewsForAutolayout(views: [avatarImageView, nameLabel, messageText, lineView, voipButton, avatarName, badgeNumberView, timeLabel, onlineStatusView])
 
         avatarImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 17.0).isActive = true
         avatarImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 15.0).isActive = true
         avatarImageView.heightAnchor.constraint(equalToConstant: 45.0).isActive = true
         avatarImageView.widthAnchor.constraint(equalToConstant: 45.0).isActive = true
-
 
         nameLabel.topAnchor.constraint(equalTo: avatarImageView.topAnchor, constant: 2).isActive = true
         nameLabel.heightAnchor.constraint(equalToConstant: 20).isActive = true
@@ -121,22 +118,20 @@ public class MessageCell: UITableViewCell {
         timeLabel.heightAnchor.constraint(equalToConstant: 15).isActive = true
         timeLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -5).isActive = true
         timeLabel.widthAnchor.constraint(equalToConstant: 70).isActive = true
-        timeLabel.topAnchor.constraint(equalTo: nameLabel.topAnchor, constant: 0).isActive  = true
+        timeLabel.topAnchor.constraint(equalTo: nameLabel.topAnchor, constant: 0).isActive = true
 
         messageText.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 2).isActive = true
         messageText.heightAnchor.constraint(equalToConstant: 20).isActive = true
         messageText.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12).isActive = true
         messageText.widthAnchor.constraint(equalToConstant: 300.0).isActive = true
 
-
         lineView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
         lineView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
         lineView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
         lineView.heightAnchor.constraint(equalToConstant: 1).isActive = true
 
-
         // setup constraint of VOIP button
-        //voipButton.trailingAnchor.constraint(equalTo: favoriteButton.leadingAnchor, constant: -25.0).isActive = true
+        // voipButton.trailingAnchor.constraint(equalTo: favoriteButton.leadingAnchor, constant: -25.0).isActive = true
         voipButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -23).isActive = true
         voipButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
         voipButton.widthAnchor.constraint(equalToConstant: 24.0).isActive = true
@@ -158,7 +153,6 @@ public class MessageCell: UITableViewCell {
         badgeNumberLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 11.0).isActive = true
         badgeNumberLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 11.0).isActive = true
 
-
         onlineStatusView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0).isActive = true
         onlineStatusView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: 0).isActive = true
         onlineStatusView.widthAnchor.constraint(equalToConstant: 6).isActive = true
@@ -172,7 +166,6 @@ public class MessageCell: UITableViewCell {
         contentView.layoutIfNeeded()
 
         badgeNumberView.layer.cornerRadius = badgeNumberView.frame.size.height / 2.0
-
     }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -181,11 +174,10 @@ public class MessageCell: UITableViewCell {
         setupConstraints()
     }
 
-    required public init?(coder aDecoder: NSCoder) {
+    @available(*, unavailable)
+    public required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-
 
     func addViewsForAutolayout(views: [UIView]) {
         for view in views {
@@ -194,93 +186,80 @@ public class MessageCell: UITableViewCell {
         }
     }
 
-
     func update(viewModel: ALMessage) {
-
-        self.message = viewModel
+        message = viewModel
 
         avatarImageView.isHidden = true
         avatarName.isHidden = true
         avatarName.backgroundColor = UIColor.gray
 
-        var channel = ALChannel();
-        var contact = ALContact ();
-        if(self.message.groupId != nil ){
-            let placeHolder =   ALUtilityClass .getImageFromFramworkBundle("applozic_group_icon.png")
+        var channel = ALChannel()
+        var contact = ALContact()
+        if message.groupId != nil {
+            let placeHolder = ALUtilityClass.getImageFromFramworkBundle("applozic_group_icon.png")
 
-            channel = ALChannelService.sharedInstance().getChannelByKey(self.message.groupId) as ALChannel;
+            channel = ALChannelService.sharedInstance().getChannelByKey(message.groupId) as ALChannel
 
             avatarImageView.isHidden = false
-            if let imgStr = channel.channelImageURL,let imgURL = URL.init(string: imgStr) {
+            if let imgStr = channel.channelImageURL, let imgURL = URL(string: imgStr) {
                 let resource = ImageResource(downloadURL: imgURL, cacheKey: imgStr)
                 avatarImageView.kf.setImage(with: resource, placeholder: placeHolder)
-            } else{
+            } else {
                 avatarImageView.image = placeHolder
             }
 
             nameLabel.text = channel.name
 
-            if(channel.unreadCount != nil){
-
+            if channel.unreadCount != nil {
                 let unreadMsgCount = channel.unreadCount.intValue
                 let numberText: String = (unreadMsgCount < 1000 ? "\(unreadMsgCount)" : "999+")
                 let isHidden = (unreadMsgCount < 1)
 
                 badgeNumberView.isHidden = isHidden
                 badgeNumberLabel.text = numberText
-            }else{
+            } else {
                 badgeNumberView.isHidden = true
             }
 
+        } else {
+            let placeHolder = ALUtilityClass.getImageFromFramworkBundle("ic_contact_picture_holo_light.png")
 
-        }else{
-
-            let placeHolder =   ALUtilityClass .getImageFromFramworkBundle("ic_contact_picture_holo_light.png")
-
-
-            contact = ALContactDBService() .loadContact(byKey: "userId", value: message.contactIds)
+            contact = ALContactDBService().loadContact(byKey: "userId", value: message.contactIds)
 
             avatarImageView.isHidden = false
 
-            if let imgStr = contact.contactImageUrl,let imgURL = URL.init(string: imgStr) {
+            if let imgStr = contact.contactImageUrl, let imgURL = URL(string: imgStr) {
                 let resource = ImageResource(downloadURL: imgURL, cacheKey: imgStr)
                 avatarImageView.kf.setImage(with: resource, placeholder: placeHolder)
 
             } else {
-
                 avatarImageView.image = placeHolder
             }
 
             // get unread count of message and set badgenumber
 
-            if(contact.unreadCount != nil){
+            if contact.unreadCount != nil {
                 let unreadMsgCount = contact.unreadCount.intValue
                 let numberText: String = (unreadMsgCount < 1000 ? "\(unreadMsgCount)" : "999+")
                 let isHidden = (unreadMsgCount < 1)
 
                 badgeNumberView.isHidden = isHidden
                 badgeNumberLabel.text = numberText
-            }else{
+            } else {
                 badgeNumberView.isHidden = true
             }
 
             nameLabel.text = contact.displayName != nil ? contact.displayName : contact.userId
-
         }
-        if(message.fileMeta != nil){
+        if message.fileMeta != nil {
             messageText.text = "Attachement"
-        }else{
+        } else {
             messageText.text = message.message
         }
 
-        let date = Date(timeIntervalSince1970: Double(message.createdAtTime.doubleValue/1000))
+        let date = Date(timeIntervalSince1970: Double(message.createdAtTime.doubleValue / 1000))
 
         let isToday = ALUtilityClass.isToday(date)
-        timeLabel.text =  message.getCreatedAtTime(isToday)
-
+        timeLabel.text = message.getCreatedAtTime(isToday)
     }
-
 }
-
-
-
