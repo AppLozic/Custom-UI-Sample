@@ -146,7 +146,7 @@ public class MessageCell: UITableViewCell {
         badgeNumberLabel.translatesAutoresizingMaskIntoConstraints = false
         badgeNumberView.addSubview(badgeNumberLabel)
 
-        badgeNumberView.trailingAnchor.constraint(lessThanOrEqualTo: nameLabel.leadingAnchor, constant: -5)
+        badgeNumberView.trailingAnchor.constraint(lessThanOrEqualTo: nameLabel.leadingAnchor, constant: -5).isActive = true
         badgeNumberView.topAnchor.constraint(equalTo: avatarImageView.topAnchor, constant: 0).isActive = true
         badgeNumberView.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: -12).isActive = true
 
@@ -175,7 +175,7 @@ public class MessageCell: UITableViewCell {
 
     }
 
-    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
         setupConstraints()
@@ -212,14 +212,10 @@ public class MessageCell: UITableViewCell {
 
             avatarImageView.isHidden = false
             if let imgStr = channel.channelImageURL,let imgURL = URL.init(string: imgStr) {
-
                 let resource = ImageResource(downloadURL: imgURL, cacheKey: imgStr)
-
-
-                avatarImageView.kf.setImage(with: resource, placeholder: placeHolder, options: nil, progressBlock: nil, completionHandler: nil)
-
-            }else{
-                avatarImageView.kf.setImage(with: nil, placeholder: placeHolder, options: nil, progressBlock: nil, completionHandler: nil)
+                avatarImageView.kf.setImage(with: resource, placeholder: placeHolder)
+            } else{
+                avatarImageView.image = placeHolder
             }
 
             nameLabel.text = channel.name
@@ -246,17 +242,14 @@ public class MessageCell: UITableViewCell {
 
             avatarImageView.isHidden = false
 
-
             if let imgStr = contact.contactImageUrl,let imgURL = URL.init(string: imgStr) {
                 let resource = ImageResource(downloadURL: imgURL, cacheKey: imgStr)
+                avatarImageView.kf.setImage(with: resource, placeholder: placeHolder)
 
-                avatarImageView.kf.setImage(with: resource, placeholder: placeHolder, options: nil, progressBlock: nil, completionHandler: nil)
+            } else {
 
-            }else{
-
-                avatarImageView.kf.setImage(with: nil, placeholder: placeHolder, options: nil, progressBlock: nil, completionHandler: nil)
+                avatarImageView.image = placeHolder
             }
-
 
             // get unread count of message and set badgenumber
 
@@ -286,8 +279,6 @@ public class MessageCell: UITableViewCell {
         timeLabel.text =  message.getCreatedAtTime(isToday)
 
     }
-
-
 
 }
 

@@ -21,15 +21,15 @@ class LoginViewController: UIViewController {
         let alUser : ALUser =  ALUser()
         if(self.userName.text as NSString? == nil || (self.userName.text! as NSString).length == 0 )
         {
-            let alert = UIAlertController(title: "Applozic", message: "Please enter userId ", preferredStyle: UIAlertControllerStyle.alert)
-            alert.addAction(UIAlertAction(title: "Okay", style: UIAlertActionStyle.default, handler: nil))
+            let alert = UIAlertController(title: "Applozic", message: "Please enter userId ", preferredStyle: UIAlertController.Style.alert)
+            alert.addAction(UIAlertAction(title: "Okay", style: UIAlertAction.Style.default, handler: nil))
             self.present(alert, animated: true, completion: nil)
             return;
         }
         alUser.userId = self.userName.text
         ALUserDefaultsHandler.setUserId(alUser.userId)
         ALUserDefaultsHandler.setUserAuthenticationTypeId(1) // APPLOZIC
-        print("userName:: " , alUser.userId)
+        print("userName:: " , alUser.userId as Any)
         if(!((emailId.text?.isEmpty)!)){
             alUser.email = emailId.text
             ALUserDefaultsHandler.setEmailId(alUser.email)

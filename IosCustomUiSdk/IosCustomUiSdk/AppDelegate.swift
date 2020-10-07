@@ -20,7 +20,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
     public var groupId : NSNumber = 0
     var window: UIWindow?
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
         registerForNotification()
 
@@ -37,7 +37,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
         }
 
         if (launchOptions != nil) {
-            let dictionary = launchOptions?[UIApplicationLaunchOptionsKey.remoteNotification] as? NSDictionary
+            let dictionary = launchOptions?[UIApplication.LaunchOptionsKey.remoteNotification] as? NSDictionary
 
             if (dictionary != nil)
             {
@@ -61,24 +61,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
     }
 
     func registerForNotification() {
-        if #available(iOS 10.0, *) {
+        UNUserNotificationCenter.current().requestAuthorization(options:[.badge, .alert, .sound]) { (granted, error) in
 
-            UNUserNotificationCenter.current().requestAuthorization(options:[.badge, .alert, .sound]) { (granted, error) in
-
-                if granted {
-                    DispatchQueue.main.async {
-                        UIApplication.shared.registerForRemoteNotifications()
-                    }
+            if granted {
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
                 }
             }
-            UNUserNotificationCenter.current().delegate = self
-        } else {
-            // Fallback on earlier versions
-            let settings = UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
-            UIApplication.shared.registerUserNotificationSettings(settings)
-            UIApplication.shared.registerForRemoteNotifications()
-
         }
+        UNUserNotificationCenter.current().delegate = self
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -141,26 +132,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
         }
     }
 
-    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any])
-    {
-        print("Received notification :: \(userInfo.description)")
-
-        applozicClient.notificationArrived(to: application, with: userInfo)
-    }
-
-
-    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler
-        completionHandler: @escaping (UIBackgroundFetchResult) -> Void)
-    {
-        print("Received notification With Completion :: \(userInfo.description)")
-
-        applozicClient.notificationArrived(to: application, with: userInfo)
-        completionHandler(UIBackgroundFetchResult.newData)
-    }
-
-
-
-    @available(iOS 10.0, *)
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
@@ -176,7 +147,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
         // Play sound and show alert to the user
     }
 
-    @available(iOS 10.0, *)
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -206,18 +176,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
             self.openChatView(dic: response.notification.request.content.userInfo)
         }else{
 
-            let dic =  response.notification.request.content.userInfo
+            let userInfo = response.notification.request.content.userInfo
 
             if((alPushAssist.topViewController is ConversationViewController)){
 
                 var json  = [String: Any]()
 
-                let userId =  dic["userId"]
-                if(userId != nil ){
+                if let userId = userInfo["userId"] as? String {
                     json  = ["userId":userId]
                     json["groupId"] = 0
-                }else{
-                    let groupId =  dic["groupId"] as? NSNumber
+                } else {
+                    let groupId =  userInfo["groupId"] as? NSNumber
                     json  = ["groupId":groupId]
                 }
 
@@ -225,11 +194,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
             }else{
                 let viewController = ConversationViewController()
 
-                let userId =  dic["userId"] as? String
+                let userId =  userInfo["userId"] as? String
                 if(userId != nil ){
                     viewController.userId = userId
                 }else{
-                    let groupId =  dic["groupId"] as? NSNumber
+                    let groupId =  userInfo["groupId"] as? NSNumber
                     viewController.groupId = groupId
                 }
                 alPushAssist.topViewController.navigationController?.pushViewController(viewController, animated: true)
@@ -240,70 +209,63 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
         completionHandler()
     }
 
-
     func sendLocalPush(message: ALMessage) {
 
-        if #available(iOS 10.0, *) {
-            let center = UNUserNotificationCenter.current()
+        let center = UNUserNotificationCenter.current()
 
-            let contactService = ALContactDBService()
-            let channelService  = ALChannelService()
-            UNUserNotificationCenter.current().delegate = self
+        let contactService = ALContactDBService()
+        let channelService  = ALChannelService()
+        UNUserNotificationCenter.current().delegate = self
 
-            var title = String()
+        var title = String()
 
-            if(message.groupId != nil && message.groupId != 0){
-                let  alChannel =  channelService.getChannelByKey(message.groupId)
+        if(message.groupId != nil && message.groupId != 0){
+            let  alChannel =  channelService.getChannelByKey(message.groupId)
 
-                guard let channel = alChannel,!channel.isNotificationMuted() else {
-                    return
-                }
-
-                title =  channel.name
-            }else{
-                let  alContact = contactService.loadContact(byKey: "userId", value: message.to)
-
-                guard let contact = alContact else {
-                    return
-                }
-                title = contact.displayName != nil ? contact.displayName:contact.userId
+            guard let channel = alChannel,!channel.isNotificationMuted() else {
+                return
             }
 
-            let content = UNMutableNotificationContent()
-            content.title = title
-            content.body = message.message
-            content.sound = UNNotificationSound.default()
+            title =  channel.name
+        }else{
+            let  alContact = contactService.loadContact(byKey: "userId", value: message.to)
 
-            var dict: [AnyHashable: Any]
-            if(message.groupId != nil && message.groupId != 0){
-                dict = ["groupId":message.groupId ]
-            }else{
-                dict = ["userId":message.to ]
+            guard let contact = alContact else {
+                return
             }
-            content.userInfo = dict
-
-            let identifier = "ApplozicLocalNotification"
-
-
-            let request = UNNotificationRequest(
-                identifier: identifier,
-                content: content,
-                trigger: nil
-            )
-
-            center.add(request, withCompletionHandler: { (error) in
-
-                if error != nil {
-                    // Something went wrong
-                }
-
-            })
-
-
-        } else {
-            // Fallback on earlier versions
+            title = contact.displayName != nil ? contact.displayName:contact.userId
         }
 
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = message.message
+        content.sound = UNNotificationSound.default
+
+        var dict = [AnyHashable: Any]()
+        if let groupId = message.groupId,
+           message.groupId != 0 {
+            dict = ["groupId": groupId ]
+        } else if let userId = message.to {
+            dict = ["userId": userId ]
+        }
+
+        content.userInfo = dict
+
+        let identifier = "ApplozicLocalNotification"
+
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: nil
+        )
+
+        center.add(request, withCompletionHandler: { (error) in
+
+            if error != nil {
+                // Something went wrong
+            }
+
+        })
     }
 
     func onMessageReceived(_ alMessage: ALMessage!) {
@@ -452,11 +414,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
     func onMqttConnectionClosed() {
         applozicClient.subscribeToConversation()
-
     }
 
     func onMqttConnected() {
-
 
     }
 
@@ -464,8 +424,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate,ApplozicUpdatesDelegate,UN
 
     }
 
-    func openChatView(dic: [AnyHashable : Any] )  {
+    func onChannelMute(_ channelKey: NSNumber!) {
 
+    }
+    
+    func openChatView(dic: [AnyHashable : Any] )  {
 
         let alPushAssist = ALPushAssist()
         let type = dic["AL_KEY"] as? String

@@ -11,13 +11,19 @@ import MessageKit
 import UIKit
 import MapKit
 import Applozic
-
+import InputBarAccessoryView
 
 public class ConversationViewController: MessagesViewController {
 
-    let refreshControl = UIRefreshControl()
+    private(set) lazy var refreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.addTarget(self, action: #selector(loadMoreMessages), for: .valueChanged)
+        return control
+    }()
+
+    // let refreshControl = UIRefreshControl()
     let appDelegate: AppDelegate? = UIApplication.shared.delegate as? AppDelegate
-    let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.gray)
+    let activityIndicator = UIActivityIndicatorView(style: UIActivityIndicatorView.Style.gray)
 
     public var userId: String?
     public var groupId: NSNumber?
@@ -38,73 +44,73 @@ public class ConversationViewController: MessagesViewController {
         activityIndicator.center = CGPoint(x: view.bounds.size.width/2, y: view.bounds.size.height/2)
         activityIndicator.color = UIColor.gray
         view.addSubview(activityIndicator)
-        self.view.bringSubview(toFront: activityIndicator)
+        self.view.bringSubviewToFront(activityIndicator)
         loadMessages()
         messagesCollectionView.messagesDataSource = self
         messagesCollectionView.messagesLayoutDelegate = self
         messagesCollectionView.messagesDisplayDelegate = self
         messagesCollectionView.messageCellDelegate = self
         messageInputBar.delegate = self
+        scrollsToBottomOnKeyboardBeginsEditing = true // default false
+        maintainPositionOnKeyboardFrameChanged = true // default false
+        messagesCollectionView.refreshControl = refreshControl
     }
 
     func loadMessages()  {
 
-        DispatchQueue.global(qos: .userInitiated).async {
+        var chatId : String?
+        let req = MessageListRequest()
+        if(self.groupId  != nil && self.groupId != 0){
+            req.channelKey =  self.groupId  // pass groupId
+            chatId = self.groupId?.stringValue
+        } else{
+            req.userId =  self.userId  // pass userId
+            chatId = self.userId
+        }
+        DispatchQueue.main.async {
+            self.activityIndicator.startAnimating()
+            self.messagesCollectionView.isUserInteractionEnabled = false
+        }
 
-            var chatId : String?
-            let req = MessageListRequest()
-            if(self.groupId  != nil && self.groupId != 0){
-                req.channelKey =  self.groupId  // pass groupId
-                chatId = self.groupId?.stringValue
-            } else{
-                req.userId =  self.userId  // pass userId
-                chatId = self.userId
-            }
-            DispatchQueue.main.async {
-                self.activityIndicator.startAnimating()
-                self.messagesCollectionView.isUserInteractionEnabled = false
-            }
-
-            if ALUserDefaultsHandler.isServerCallDone(forMSGList: chatId) {
-                ALMessageService.getMessageList(forContactId: req.userId, isGroup: req.channelKey != nil, channelKey: req.channelKey, conversationId: nil, start: 0, withCompletion: {
-                    messages in
-                    guard let messages = messages else {
-                        return
-                    }
-                    NSLog("messages loaded: %@", messages)
-                    for alMessage in messages {
-                        self.convertMessageToMockMessage(_alMessage: alMessage as! ALMessage)
-                    }
-
-                    DispatchQueue.main.async {
-                        self.activityIndicator.stopAnimating()
-                        self.messagesCollectionView.isUserInteractionEnabled = true
-                        self.messagesCollectionView.reloadData()
-                        self.messagesCollectionView.scrollToBottom()
-                    }
-                    self.markConversationAsRead()
-                })
-            } else {
-
-                self.appDelegate?.applozicClient.getMessages(req) { (messageList, error) in
-
-                    guard error == nil, let newMessages = messageList as? [ALMessage] else {
-                        return
-                    }
-
-                    for alMessage in newMessages {
-                        self.convertMessageToMockMessage(_alMessage: alMessage)
-                    }
-
-                    self.messageList =  self.messageList.reversed()
-                    DispatchQueue.main.async {
-                        self.activityIndicator.stopAnimating()
-                        self.messagesCollectionView.isUserInteractionEnabled = true
-                        self.messagesCollectionView.reloadData()
-                        self.messagesCollectionView.scrollToBottom()
-                    }
-                    self.markConversationAsRead()
+        if ALUserDefaultsHandler.isServerCallDone(forMSGList: chatId) {
+            ALMessageService.getMessageList(forContactId: req.userId, isGroup: req.channelKey != nil, channelKey: req.channelKey, conversationId: nil, start: 0, withCompletion: {
+                messages in
+                guard let messages = messages else {
+                    return
                 }
+                NSLog("messages loaded: %@", messages)
+                for alMessage in messages {
+                    self.convertMessageToMockMessage(_alMessage: alMessage as! ALMessage)
+                }
+
+                DispatchQueue.main.async {
+                    self.activityIndicator.stopAnimating()
+                    self.messagesCollectionView.isUserInteractionEnabled = true
+                    self.messagesCollectionView.reloadData()
+                    self.messagesCollectionView.scrollToBottom()
+                }
+                self.markConversationAsRead()
+            })
+        } else {
+
+            self.appDelegate?.applozicClient.getMessages(req) { (messageList, error) in
+
+                guard error == nil, let newMessages = messageList as? [ALMessage] else {
+                    return
+                }
+
+                for alMessage in newMessages {
+                    self.convertMessageToMockMessage(_alMessage: alMessage)
+                }
+
+                self.messageList =  self.messageList.reversed()
+                DispatchQueue.main.async {
+                    self.activityIndicator.stopAnimating()
+                    self.messagesCollectionView.isUserInteractionEnabled = true
+                    self.messagesCollectionView.reloadData()
+                    self.messagesCollectionView.scrollToBottom()
+                }
+                self.markConversationAsRead()
             }
         }
     }
@@ -129,77 +135,74 @@ public class ConversationViewController: MessagesViewController {
     }
 
     @objc func loadMoreMessages() {
-        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: DispatchTime.now() + 4) {
+        let messagelist = MessageListRequest()
 
-            let messagelist = MessageListRequest()
+        if (self.groupId != nil && self.groupId != 0) {
+            messagelist.channelKey =  self.groupId// pass groupId
+        } else {
+            messagelist.userId =  self.userId// pass userId
+        }
 
-            if (self.groupId != nil && self.groupId != 0) {
-                messagelist.channelKey =  self.groupId// pass groupId
-            } else {
-                messagelist.userId =  self.userId// pass userId
-            }
+        messagelist.endTimeStamp = self.messageList[0].createdAtTime
 
-            messagelist.endTimeStamp = self.messageList[0].createdAtTime
+        self.appDelegate?.applozicClient.getMessages(messagelist, withCompletionHandler: { messageList, error in
+            if error == nil {
 
-            self.appDelegate?.applozicClient.getMessages(messagelist, withCompletionHandler: { messageList, error in
-                if error == nil {
+                guard error == nil, let newMessages = messageList as? [ALMessage] else {
+                    return
+                }
 
-                    guard error == nil, let newMessages = messageList as? [ALMessage] else {
-                        return
-                    }
+                var messageArray: [Message] = []
 
-                    var messageArray: [Message] = []
+                for alMessage in newMessages {
 
-                    for alMessage in newMessages {
+                    switch  Int32(alMessage.contentType)  {
 
-                        switch  Int32(alMessage.contentType)  {
+                    case ALMESSAGE_CONTENT_DEFAULT:
 
-                        case ALMESSAGE_CONTENT_DEFAULT:
+                        var mockTextMessage =  Message(text: alMessage.message ?? "", sender:self.getSender(message:alMessage), messageId: alMessage.key, date:                            Date(timeIntervalSince1970: Double(alMessage.createdAtTime.doubleValue/1000)))
+                        mockTextMessage.createdAtTime = alMessage.createdAtTime
+                        messageArray.append(mockTextMessage)
 
-                            var mockTextMessage =   Message(text: alMessage.message, sender:self.getSender(message:alMessage), messageId: alMessage.key, date:                            Date(timeIntervalSince1970: Double(alMessage.createdAtTime.doubleValue/1000)))
-                            mockTextMessage.createdAtTime = alMessage.createdAtTime
-                            messageArray.append(mockTextMessage)
+                        break;
 
-                            break;
+                    case ALMESSAGE_CONTENT_LOCATION:
 
-                        case ALMESSAGE_CONTENT_LOCATION:
+                        let objectData: Data? = alMessage.message.data(using: String.Encoding(rawValue: String.Encoding.utf8.rawValue))
+                        var jsonStringDic: [AnyHashable : Any]? = nil
 
-                            let objectData: Data? = alMessage.message.data(using: String.Encoding(rawValue: String.Encoding.utf8.rawValue))
-                            var jsonStringDic: [AnyHashable : Any]? = nil
-
-                            if let aData = objectData {
-                                jsonStringDic = try! JSONSerialization.jsonObject(with: aData, options: .mutableContainers) as? [AnyHashable : Any]
-                            }
-
-                            let latDelta: CLLocationDegrees =  Double(jsonStringDic?["lat"] as! String) ?? 0.0
-
-                            let lonDelta: CLLocationDegrees =  Double(jsonStringDic?["lon"] as! String) ?? 0.0
-
-                            let location =  CLLocation(latitude: latDelta, longitude: lonDelta)
-
-                            let date =  Date(timeIntervalSince1970: Double(alMessage.createdAtTime.doubleValue/1000))
-
-                            var mockLocationMessage =  Message(location: location, sender: self.getSender(message:alMessage), messageId: alMessage.key, date: date)
-                            mockLocationMessage.createdAtTime = alMessage.createdAtTime
-
-                            messageArray.append(mockLocationMessage)
-
-                            break;
-                        default:
-                            break
-
+                        if let aData = objectData {
+                            jsonStringDic = try! JSONSerialization.jsonObject(with: aData, options: .mutableContainers) as? [AnyHashable : Any]
                         }
 
+                        let latDelta: CLLocationDegrees =  Double(jsonStringDic?["lat"] as! String) ?? 0.0
+
+                        let lonDelta: CLLocationDegrees =  Double(jsonStringDic?["lon"] as! String) ?? 0.0
+
+                        let location =  CLLocation(latitude: latDelta, longitude: lonDelta)
+
+                        let date =  Date(timeIntervalSince1970: Double(alMessage.createdAtTime.doubleValue/1000))
+
+                        var mockLocationMessage =  Message(location: location, sender: self.getSender(message:alMessage), messageId: alMessage.key, date: date)
+                        mockLocationMessage.createdAtTime = alMessage.createdAtTime
+
+                        messageArray.append(mockLocationMessage)
+
+                        break;
+                    default:
+                        break
+
                     }
 
-                    DispatchQueue.main.async {
-                        self.messageList.insert(contentsOf: messageArray, at: 0)
-                        self.messagesCollectionView.reloadDataAndKeepOffset()
-                        self.refreshControl.endRefreshing()
-                    }
                 }
-            })
-        }
+
+                DispatchQueue.main.async {
+                    self.messageList.insert(contentsOf: messageArray, at: 0)
+                    self.messagesCollectionView.reloadDataAndKeepOffset()
+                    self.refreshControl.endRefreshing()
+                }
+            }
+        })
     }
 
     @objc func handleKeyboardButton() {
@@ -233,6 +236,7 @@ public class ConversationViewController: MessagesViewController {
 
     func slack() {
         defaultStyle()
+        messageInputBar.inputTextView.placeholder = "Type a message..."
         messageInputBar.backgroundView.backgroundColor = .white
         messageInputBar.isTranslucent = false
         messageInputBar.inputTextView.backgroundColor = .clear
@@ -260,18 +264,18 @@ public class ConversationViewController: MessagesViewController {
                     $0.setTitleColor(.white, for: .normal)
                     $0.setTitleColor(.white, for: .highlighted)
                     $0.setSize(CGSize(width: 52, height: 30), animated: true)
-            }.onDisabled {
-                $0.layer.borderColor = $0.titleColor(for: .disabled)?.cgColor
-                $0.backgroundColor = .white
-            }.onEnabled {
-                $0.backgroundColor = UIColor(red: 69/255, green: 193/255, blue: 89/255, alpha: 1)
-                $0.layer.borderColor = UIColor.clear.cgColor
-            }.onSelected {
-                // We use a transform becuase changing the size would cause the other views to relayout
-                $0.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
-            }.onDeselected {
-                $0.transform = CGAffineTransform.identity
-            }
+                }.onDisabled {
+                    $0.layer.borderColor = $0.titleColor(for: .disabled)?.cgColor
+                    $0.backgroundColor = .white
+                }.onEnabled {
+                    $0.backgroundColor = UIColor(red: 69/255, green: 193/255, blue: 89/255, alpha: 1)
+                    $0.layer.borderColor = UIColor.clear.cgColor
+                }.onSelected {
+                    // We use a transform becuase changing the size would cause the other views to relayout
+                    $0.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+                }.onDeselected {
+                    $0.transform = CGAffineTransform.identity
+                }
         ]
         items.forEach { $0.tintColor = .lightGray }
 
@@ -288,6 +292,7 @@ public class ConversationViewController: MessagesViewController {
 
     func iMessage() {
         defaultStyle()
+        messageInputBar.inputTextView.placeholder = "Type a message..."
         messageInputBar.isTranslucent = false
         messageInputBar.backgroundView.backgroundColor = .white
         messageInputBar.separatorLine.isHidden = true
@@ -309,11 +314,11 @@ public class ConversationViewController: MessagesViewController {
         messageInputBar.sendButton.title = nil
         messageInputBar.sendButton.imageView?.layer.cornerRadius = 16
         messageInputBar.sendButton.backgroundColor = .clear
-        messageInputBar.textViewPadding.right = -38
+        messageInputBar.middleContentViewPadding.right = -38
     }
 
     func defaultStyle() {
-        let newMessageInputBar = MessageInputBar()
+        let newMessageInputBar = InputBarAccessoryView()
         newMessageInputBar.sendButton.tintColor = UIColor(red: 69/255, green: 193/255, blue: 89/255, alpha: 1)
         newMessageInputBar.delegate = self
         messageInputBar = newMessageInputBar
@@ -328,13 +333,13 @@ public class ConversationViewController: MessagesViewController {
                 $0.spacing = .fixed(10)
                 $0.image = UIImage(named: named)?.withRenderingMode(.alwaysTemplate)
                 $0.setSize(CGSize(width: 30, height: 30), animated: true)
-        }.onSelected {
-            $0.tintColor = UIColor(red: 69/255, green: 193/255, blue: 89/255, alpha: 1)
-        }.onDeselected {
-            $0.tintColor = UIColor.lightGray
-        }.onTouchUpInside { _ in
-            print("Item Tapped")
-        }
+            }.onSelected {
+                $0.tintColor = UIColor(red: 69/255, green: 193/255, blue: 89/255, alpha: 1)
+            }.onDeselected {
+                $0.tintColor = UIColor.lightGray
+            }.onTouchUpInside { _ in
+                print("Item Tapped")
+            }
     }
 
 
@@ -349,13 +354,12 @@ public class ConversationViewController: MessagesViewController {
 
 extension ConversationViewController: MessagesDataSource {
 
-    public func currentSender() -> Sender {
+
+    public func currentSender() -> SenderType {
 
         let contactDBService = ALContactDBService()
         let contact = contactDBService.loadContact(byKey: "userId", value: ALUserDefaultsHandler.getUserId()) as ALContact
-
-        let senderContact =  Sender(id:contact.userId , displayName: contact.displayName != nil ? contact.displayName : contact.userId )
-
+        let senderContact = Contact(senderId: contact.userId, displayName: contact.displayName != nil ? contact.displayName : contact.userId)
         return senderContact
     }
 
@@ -369,20 +373,20 @@ extension ConversationViewController: MessagesDataSource {
 
     public func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
         if indexPath.section % 3 == 0 {
-            return NSAttributedString(string: MessageKitDateFormatter.shared.string(from: message.sentDate), attributes: [NSAttributedStringKey.font: UIFont.boldSystemFont(ofSize: 10), NSAttributedStringKey.foregroundColor: UIColor.darkGray])
+            return NSAttributedString(string: MessageKitDateFormatter.shared.string(from: message.sentDate), attributes: [NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 10), NSAttributedString.Key.foregroundColor: UIColor.darkGray])
         }
         return nil
     }
 
     public func messageTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
         let name = message.sender.displayName
-        return NSAttributedString(string: name, attributes: [NSAttributedStringKey.font: UIFont.preferredFont(forTextStyle: .caption1)])
+        return NSAttributedString(string: name, attributes: [NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .caption1)])
     }
 
     public func messageBottomLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
 
         let dateString = formatter.string(from: message.sentDate)
-        return NSAttributedString(string: dateString, attributes: [NSAttributedStringKey.font: UIFont.preferredFont(forTextStyle: .caption2)])
+        return NSAttributedString(string: dateString, attributes: [NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .caption2)])
     }
 
 }
@@ -397,7 +401,7 @@ extension ConversationViewController: MessagesDisplayDelegate {
         return isFromCurrentSender(message: message) ? .white : .darkText
     }
 
-    public func detectorAttributes(for detector: DetectorType, and message: MessageType, at indexPath: IndexPath) -> [NSAttributedStringKey: Any] {
+    public func detectorAttributes(for detector: DetectorType, and message: MessageType, at indexPath: IndexPath) -> [NSAttributedString.Key: Any] {
         return MessageLabel.defaultAttributes
     }
 
@@ -415,21 +419,19 @@ extension ConversationViewController: MessagesDisplayDelegate {
     public func messageStyle(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> MessageStyle {
         let corner: MessageStyle.TailCorner = isFromCurrentSender(message: message) ? .bottomRight : .bottomLeft
         return .bubbleTail(corner, .curved)
-        //        let configurationClosure = { (view: MessageContainerView) in}
-        //        return .custom(configurationClosure)
     }
 
     public func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
 
 
         let contactDataBase = ALContactDBService()
-        let alContact = contactDataBase .loadContact(byKey:"userId", value: message.sender.id)
+        let alContact = contactDataBase .loadContact(byKey:"userId", value: message.sender.senderId)
 
         guard let contact = alContact else {
             return
         }
 
-        avatarView.set(avatar:Avatar(initials:(contact.displayName != nil ? String(contact.displayName.first ?? "A") :String(message.sender.id.first ?? "A"))) )
+        avatarView.set(avatar:Avatar(initials:(contact.displayName != nil ? String(contact.displayName.first ?? "A") :String(message.sender.senderId.first ?? "A"))) )
 
     }
 
@@ -535,41 +537,59 @@ extension ConversationViewController: MessageLabelDelegate {
 
 // MARK: - MessageInputBarDelegate
 
-extension ConversationViewController: MessageInputBarDelegate {
+extension ConversationViewController: InputBarAccessoryViewDelegate {
 
-    public func messageInputBar(_ inputBar: MessageInputBar, didPressSendButtonWith text: String) {
 
-        // Each NSTextAttachment that contains an image will count as one empty character in the text: String
+    @objc public func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String) {
+        processInputBar(messageInputBar)
+    }
 
-        for component in inputBar.inputTextView.components {
+    func processInputBar(_ inputBar: InputBarAccessoryView) {
+        // Here we can parse for which substrings were autocompleted
+        let attributedText = inputBar.inputTextView.attributedText!
+        let range = NSRange(location: 0, length: attributedText.length)
+        attributedText.enumerateAttribute(.autocompleted, in: range, options: []) { (_, range, _) in
 
-            if let image = component as? UIImage {
+            let substring = attributedText.attributedSubstring(from: range)
+            let context = substring.attribute(.autocompletedContext, at: 0, effectiveRange: nil)
+            print("Autocompleted: `", substring, "` with context: ", context ?? [])
+        }
 
-                let imageMessage = Message(image: image, sender: currentSender(), messageId: UUID().uuidString, date: Date())
-                messageList.append(imageMessage)
-                messagesCollectionView.insertSections([messageList.count - 1])
+        let components = inputBar.inputTextView.components
+        inputBar.inputTextView.text = String()
+        inputBar.invalidatePlugins()
+        // Send button activity animation
+        inputBar.sendButton.startAnimating()
+        inputBar.inputTextView.placeholder = "Sending..."
+        DispatchQueue.global(qos: .default).async {
+            // fake send request task
+            sleep(1)
+            DispatchQueue.main.async { [weak self] in
+                inputBar.sendButton.stopAnimating()
+                inputBar.inputTextView.placeholder = "Type a message..."
+                self?.insertMessages(components)
+                self?.messagesCollectionView.scrollToBottom(animated: true)
+            }
+        }
+    }
 
-            } else if let text = component as? String {
+
+    private func insertMessages(_ data: [Any]) {
+        for component in data {
+            // let user = SampleData.shared.currentSender
+            if let str = component as? String {
                 let channelService = ALChannelService()
                 if (self.channel != nil && channelService.isChannelLeft(self.channel?.key)) {
                     return;
                 }
-                self.send(message: text, isOpenGroup: self.channel != nil && self.channel?.type != nil && self.channel?.type == 6)
-
+                self.send(message: str, isOpenGroup: self.channel != nil && self.channel?.type != nil && self.channel?.type == 6)
             }
-        }
 
-        inputBar.inputTextView.text = String()
-        messagesCollectionView.scrollToBottom()
+        }
     }
 
 
     open func send(message: String, isOpenGroup: Bool = false) {
-
-        
-
-        let attributedText = NSAttributedString(string: message, attributes: [.font: UIFont.systemFont(ofSize: 15), .foregroundColor: UIColor.white])
-
         var alMessage = ALMessage();
 
         alMessage = ALMessage.build({ alMessageBuilder in
@@ -582,14 +602,6 @@ extension ConversationViewController: MessageInputBarDelegate {
             }
             alMessageBuilder?.message = message
         })
-
-
-        let mockMessage = Message(attributedText: attributedText, sender: currentSender(), messageId: alMessage.key, date:  Date(timeIntervalSince1970: Double(alMessage.createdAtTime.doubleValue/1000)))
-
-        messageList.append(mockMessage)
-
-        messagesCollectionView.insertSections([messageList.count - 1])
-        self.messagesCollectionView.reloadData()
 
         if isOpenGroup {
             let messageClientService = ALMessageClientService()
@@ -631,7 +643,7 @@ extension ConversationViewController: MessageInputBarDelegate {
         setTitle()
 
         messageInputBar.sendButton.tintColor = UIColor(red: 69/255, green: 193/255, blue: 89/255, alpha: 1)
-        scrollsToBottomOnKeybordBeginsEditing = true // default false
+        // scrollsToBottomOnKeybordBeginsEditing = true // default false
         maintainPositionOnKeyboardFrameChanged = true // default false
 
         iMessage()
@@ -840,7 +852,7 @@ extension ConversationViewController: MessageInputBarDelegate {
 
         case ALMESSAGE_CONTENT_DEFAULT:
 
-            var mockTextMessage =  Message(text: _alMessage.message, sender: self.getSender(message: _alMessage), messageId: _alMessage.key, date:                            Date(timeIntervalSince1970: Double(_alMessage.createdAtTime.doubleValue/1000)))
+            var mockTextMessage =  Message(text: _alMessage.message ?? "", sender: self.getSender(message: _alMessage), messageId: _alMessage.key, date:                            Date(timeIntervalSince1970: Double(_alMessage.createdAtTime.doubleValue/1000)))
             mockTextMessage.createdAtTime = _alMessage.createdAtTime
             self.messageList.append(mockTextMessage)
 
@@ -870,16 +882,40 @@ extension ConversationViewController: MessageInputBarDelegate {
         }
     }
 
-    func getSender(message:ALMessage) -> Sender {
+    func insertMessage(_ message: Message) {
+        messageList.append(message)
+        // Reload last section to update header/footer labels and insert a new one
+        messagesCollectionView.performBatchUpdates({
+            messagesCollectionView.insertSections([messageList.count - 1])
+            if messageList.count >= 1 {
+                messagesCollectionView.reloadSections([messageList.count - 2])
+            }
+        }, completion: { [weak self] _ in
+            if self?.isLastSectionVisible() == true {
+                self?.messagesCollectionView.scrollToBottom(animated: true)
+            }
+        })
+    }
+
+    func isLastSectionVisible() -> Bool {
+
+        guard !messageList.isEmpty else { return false }
+
+        let lastIndexPath = IndexPath(item: 0, section: messageList.count - 1)
+
+        return messagesCollectionView.indexPathsForVisibleItems.contains(lastIndexPath)
+    }
+
+    func getSender(message:ALMessage) -> Contact {
         let contactDB = ALContactDBService()
 
-        var contact =   ALContact()
+        var contact =  ALContact()
         if (message.isReceivedMessage()) {
             contact =  contactDB.loadContact(byKey: "userId", value: message.to)
-            return  Sender(id: message.to, displayName: contact.displayName == nil ? message.to: contact.displayName)
+            return  Contact(senderId: message.to, displayName: contact.displayName == nil ? message.to: contact.displayName)
         } else {
             contact =  contactDB.loadContact(byKey: "userId", value:ALUserDefaultsHandler.getUserId())
-            return Sender(id: ALUserDefaultsHandler.getUserId(), displayName: contact.displayName == nil ? ALUserDefaultsHandler.getUserId(): contact.displayName)
+            return  Contact(senderId: ALUserDefaultsHandler.getUserId(), displayName:  contact.displayName == nil ? ALUserDefaultsHandler.getUserId(): contact.displayName)
         }
     }
 

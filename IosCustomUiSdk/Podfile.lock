@@ -1,31 +1,38 @@
 PODS:
-  - Applozic (7.2.0):
-    - SDWebImage (~> 5.1.0)
-  - Kingfisher (4.7.0)
-  - MessageKit (1.0.0)
-  - SDWebImage (5.1.1):
-    - SDWebImage/Core (= 5.1.1)
-  - SDWebImage/Core (5.1.1)
+  - Applozic (7.11.0):
+    - SDWebImage (~> 5.7.2)
+  - InputBarAccessoryView (5.2.1):
+    - InputBarAccessoryView/Core (= 5.2.1)
+  - InputBarAccessoryView/Core (5.2.1)
+  - Kingfisher (5.15.3):
+    - Kingfisher/Core (= 5.15.3)
+  - Kingfisher/Core (5.15.3)
+  - MessageKit (3.4.2):
+    - InputBarAccessoryView (~> 5.2.1)
+  - SDWebImage (5.7.4):
+    - SDWebImage/Core (= 5.7.4)
+  - SDWebImage/Core (5.7.4)
 
 DEPENDENCIES:
-  - Applozic (= 7.2.0)
-  - Kingfisher (~> 4.7.0)
+  - Applozic
+  - Kingfisher
   - MessageKit
 
 SPEC REPOS:
-  https://github.com/CocoaPods/Specs.git:
-    - Kingfisher
-    - MessageKit
   trunk:
     - Applozic
+    - InputBarAccessoryView
+    - Kingfisher
+    - MessageKit
     - SDWebImage
 
 SPEC CHECKSUMS:
-  Applozic: 5ced45cb804f9d9e9819a7839d8d9a70077839eb
-  Kingfisher: da6b005aa96d37698e3e4f1ccfe96a5b9bbf27d6
-  MessageKit: 16160036b16476b04bd0e9f2c7ce67e662e503e4
-  SDWebImage: 96d7f03415ccb28d299d765f93557ff8a617abd8
+  Applozic: e4c3d4a50d9feaa105608d9d8219686b6639b55b
+  InputBarAccessoryView: 39a7ed22727baf3b8550ecdf6c8a4d28b2c6aa91
+  Kingfisher: 2fef2f4d9e809285aff7f6195b5290520904f3fa
+  MessageKit: 5ff0908bce5a7b6e11bd0b60e13a33e03697d161
+  SDWebImage: 48b88379b798fd1e4298f95bb25d2cdabbf4deb3
 
-PODFILE CHECKSUM: c4edf111410688d2f46b5cb305754e7627418d27
+PODFILE CHECKSUM: b28824a707c5baf4bcff8f548109479fc465775d
 
-COCOAPODS: 1.8.4
+COCOAPODS: 1.9.3

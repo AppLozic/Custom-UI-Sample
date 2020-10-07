@@ -16,7 +16,7 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
 
     let appDelegate: AppDelegate? = UIApplication.shared.delegate as? AppDelegate
 
-    let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.gray)
+    let activityIndicator = UIActivityIndicatorView(style: UIActivityIndicatorView.Style.gray)
 
     fileprivate let tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
@@ -75,7 +75,7 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
         activityIndicator.center = CGPoint(x: view.bounds.size.width/2, y: view.bounds.size.height/2)
         activityIndicator.color = UIColor.gray
         view.addSubview(activityIndicator)
-        self.view.bringSubview(toFront: activityIndicator)
+        self.view.bringSubviewToFront(activityIndicator)
         self.activityIndicator.startAnimating()
         appDelegate?.applozicClient.subscribeToConversation()
         self.loadMessages()
@@ -126,7 +126,6 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
         tableView.dataSource = self
         tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         tableView.scrollIndicatorInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-        self.automaticallyAdjustsScrollViewInsets = false
         tableView.register(MessageCell.self, forCellReuseIdentifier: "MessageCell")
 
     }
@@ -238,7 +237,7 @@ public class ConversationListViewController: UIViewController, UITableViewDelega
             }
         }
 
-        if let firstElement = messagePresent.first, let index = allMessages.index(of: firstElement) {
+        if let firstElement = messagePresent.first, let index = allMessages.firstIndex(of: firstElement) {
             allMessages[index] = alMessage
             self.allMessages[index] = alMessage
         } else {
