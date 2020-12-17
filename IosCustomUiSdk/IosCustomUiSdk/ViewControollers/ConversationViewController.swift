@@ -764,9 +764,11 @@ extension ConversationViewController: InputBarAccessoryViewDelegate {
     public func markConversationAsRead() {
         if groupId != nil, groupId != 0 {
             appDelegate?.applozicClient.markConversationRead(forGroup: groupId) { _, _ in
+                NotificationCenter.default.post(name: Notification.Name(rawValue: Constants.NotificationsName.DidRecieveNewMessageNotification), object: nil)
             }
         } else {
             appDelegate?.applozicClient.markConversationRead(forOnetoOne: userId) { _, _ in
+                NotificationCenter.default.post(name: Notification.Name(rawValue: Constants.NotificationsName.DidRecieveNewMessageNotification), object: nil)
             }
         }
     }

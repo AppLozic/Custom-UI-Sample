@@ -246,6 +246,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ApplozicUpdatesDelegate, 
     }
 
     func onMessageReceived(_ alMessage: ALMessage!) {
+        if !pushAssist.topViewController.isKind(of: ConversationViewController.classForCoder()) {
+            NotificationCenter.default.post(name: Notification.Name(rawValue: Constants.NotificationsName.DidRecieveNewMessageNotification), object: nil)
+        }
         if pushAssist.topViewController is ConversationListViewController {
             let viewController = pushAssist.topViewController as? ConversationListViewController
             viewController?.onMessageReceived(alMessage)

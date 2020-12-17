@@ -56,10 +56,9 @@ class LoginViewController: UIViewController {
         applozicClient.loginUser(alUser) { _, error in
 
             if error == nil {
-                let conversationVC = ConversationListViewController()
-                let nav = ALKBaseNavigationViewController(rootViewController: conversationVC)
-                nav.modalPresentationStyle = .fullScreen
-                self.present(nav, animated: true, completion: nil)
+                let viewController: UIViewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ViewController") as UIViewController
+                viewController.modalPresentationStyle = .fullScreen
+                self.present(viewController, animated: true, completion: nil)
             } else {
                 NSLog("[REGISTRATION] Applozic user registration error: %@", error.debugDescription)
             }

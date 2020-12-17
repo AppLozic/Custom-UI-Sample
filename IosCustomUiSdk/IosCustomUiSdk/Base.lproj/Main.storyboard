@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17156" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="OdI-dL-e8b">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="OdI-dL-e8b">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment version="4624" identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17125"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17505"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -115,7 +115,7 @@
         <!--View Controller-->
         <scene sceneID="zZH-1z-WRL">
             <objects>
-                <viewController storyboardIdentifier="ViewController" id="Z3f-Vp-BD5" customClass="ViewController" customModule="ApplozicSwiftDemo" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ViewController" id="Z3f-Vp-BD5" customClass="ViewController" customModule="IosCustomUiSdk" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="G4O-Ai-lyi"/>
                         <viewControllerLayoutGuide type="bottom" id="bOU-oa-BS1"/>
@@ -132,7 +132,7 @@
                                 </constraints>
                                 <state key="normal" title="Launch Chat"/>
                                 <connections>
-                                    <action selector="launchChatList:" destination="Z3f-Vp-BD5" eventType="touchUpInside" id="bjJ-an-I6w"/>
+                                    <action selector="launchChatList:" destination="Z3f-Vp-BD5" eventType="touchUpInside" id="pY4-d5-6Hm"/>
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="IeC-aN-tvh">
@@ -146,20 +146,33 @@
                                     <action selector="logoutAction:" destination="Z3f-Vp-BD5" eventType="touchUpInside" id="qJ2-Z9-Jue"/>
                                 </connections>
                             </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Unread conversations " textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="zxo-Ko-WJe">
+                                <rect key="frame" x="20" y="331" width="335" height="39"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="IeC-aN-tvh" firstAttribute="top" secondItem="M1W-RV-hM5" secondAttribute="bottom" constant="100" id="5aY-dP-TeF"/>
+                            <constraint firstItem="zxo-Ko-WJe" firstAttribute="top" secondItem="IeC-aN-tvh" secondAttribute="bottom" constant="10" id="H0L-0S-40u"/>
                             <constraint firstItem="IeC-aN-tvh" firstAttribute="centerX" secondItem="Vg5-aS-0t4" secondAttribute="centerX" id="H1G-QO-Gq3"/>
                             <constraint firstItem="M1W-RV-hM5" firstAttribute="top" secondItem="G4O-Ai-lyi" secondAttribute="bottom" constant="20" id="SZp-sH-Wj1"/>
                             <constraint firstItem="M1W-RV-hM5" firstAttribute="centerX" secondItem="Vg5-aS-0t4" secondAttribute="centerX" id="Xb4-bp-kFx"/>
+                            <constraint firstItem="zxo-Ko-WJe" firstAttribute="centerX" secondItem="Vg5-aS-0t4" secondAttribute="centerX" id="dkl-4A-gjy"/>
+                            <constraint firstItem="zxo-Ko-WJe" firstAttribute="leading" secondItem="Vg5-aS-0t4" secondAttribute="leadingMargin" constant="30" id="fZo-LK-dDE"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="zxo-Ko-WJe" secondAttribute="trailing" constant="30" id="qkR-RD-lJO"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="dgB-co-wTM"/>
+                    <connections>
+                        <outlet property="unreadConversationsLabel" destination="zxo-Ko-WJe" id="1UP-hO-DZN"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="tBw-GJ-pg8" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1030" y="800"/>
+            <point key="canvasLocation" x="1029.5999999999999" y="799.2503748125938"/>
         </scene>
     </scenes>
 </document>
